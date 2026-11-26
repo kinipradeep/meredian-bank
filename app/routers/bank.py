@@ -23,6 +23,8 @@ def _agents(db, surface: str | None = None):
     q = db.query(Agent).filter_by(enabled=True)
     if surface:
         q = q.filter_by(surface=surface)
+    else:
+        q = q.filter(Agent.surface != "internal")      # back-office agents are only reachable via other agents
     return q.order_by(Agent.sort_order, Agent.id).all()
 
 
@@ -76,7 +78,7 @@ def lab(request: Request, db: Session = Depends(get_db), user: User = Depends(re
     from ..integrations.settings import get_integration
     return templates.TemplateResponse(request, "bank/lab.html", _ctx(
         request, db, user, challenges=challenges, solved=solved, agents=_agents(db),
-        score=sum(c.points for c in challenges if c.id in solved), mcp_bank=get_integration(db, "mcp_bank"),
+        score=__import__("app.ctf", fromlist=["player_score"]).player_score(db, user), mcp_bank=get_integration(db, "mcp_bank"),
         mcp_endpoint=str(request.base_url).rstrip("/") + "/mcp/", new_token=request.session.pop("new_mcp_token", None)))
 
 
@@ -95,7 +97,7 @@ def lab_mcp_token(request: Request, csrf: str = Form(""), db: Session = Depends(
 @router.get("/lab/agent/{slug}")
 def lab_agent(slug: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     agent = db.query(Agent).filter_by(slug=slug, enabled=True).first()
-    if not agent:
+    if not agent or agent.surface == "internal":
         return RedirectResponse("/lab", status_code=303)
     return templates.TemplateResponse(request, "bank/chat.html", _ctx(
         request, db, user, agents=[agent], agent=agent, title=agent.name, subtitle=agent.description, surface="lab"))

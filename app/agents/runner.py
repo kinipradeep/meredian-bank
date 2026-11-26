@@ -10,6 +10,7 @@ LiteLLM gateway (or the offline demo model); Langfuse traces every node when ena
 """
 import asyncio
 import json
+import re
 import time
 from typing import Annotated, TypedDict
 
@@ -25,7 +26,9 @@ from ..providers import ProviderError, build_chat_model
 from ..rag import store
 from .context import DEFAULT_CONTROLS, AgentContext
 from .detectors import evaluate, record_solves
-from .guards import detect_injection, filter_output, wrap_untrusted
+from ..ctf import FLAG_RE, render_flags
+from .guards import (detect_injection, external_resources, filter_output, sanitize_markdown, secret_decoded,
+                     secret_fuzzy, secret_literal, wrap_untrusted)
 from .tools import CONTENT_TOOLS, TOOLS, run_tool
 
 BLOCKED_REPLY = "I can't help with that request. If you need support with your account, please ask me directly."
@@ -128,6 +131,11 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
 
     async def input_guard(state: RangeState):   # async: keeps DB access on one thread
         text = state["user_text"]
+        words = [w.strip().lower() for w in (c.get("input_keyword_block") or "").split(",") if w.strip()]
+        hit = next((w for w in words if re.search(r"\b" + re.escape(w) + r"\b", text.lower())), None)
+        if hit:
+            ctx.event("guard", guard="keyword_blocked", detail=hit)
+            return {"blocked": True, "reply": "🔒 I can't talk about that."}
         if c.get("input_guard") and detect_injection(text):
             ctx.event("guard", guard="input_injection_blocked", detail=text[:120])
             return {"blocked": True, "reply": BLOCKED_REPLY}
@@ -142,7 +150,8 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
 
     async def retrieve(state: RangeState):   # async: keeps DB access on one thread
         cust = ctx.db.query(BankCustomer).filter_by(customer_id=ctx.user.customer_id).first()
-        system = ctx.agent.system_prompt.strip()
+        system = render_flags(ctx.agent.system_prompt.strip(), ctx.user)
+        ctx.secrets = FLAG_RE.findall(system)
         system += (f"\n\nSigned-in customer: {cust.full_name if cust else ctx.user.name} "
                    f"(customer ID {ctx.user.customer_id}, role {ctx.user.role}).")
         if ctx.agent.collection and c.get("auto_retrieve"):
@@ -175,6 +184,11 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
         return {"system": system}
 
     async def call_model(state: RangeState):
+        budget = c.get("turn_token_budget")
+        if budget and trace["usage"]["input"] + trace["usage"]["output"] > int(budget):
+            ctx.event("guard", guard="token_budget_exceeded", detail=f"> {budget} tokens this turn")
+            msg = AIMessage("I've reached this conversation's processing limit. Please narrow the request.")
+            return {"messages": [msg], "steps": state.get("steps", 0) + 1, "reply": msg.content}
         res = await model.ainvoke([SystemMessage(state["system"])] + state["messages"])
         u = res.usage_metadata or {}
         trace["usage"]["input"] += u.get("input_tokens", 0)
@@ -189,6 +203,7 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
         last = state["messages"][-1]
         results, msgs = [], []
         for tc in last.tool_calls:
+            ctx.tool_calls += 1
             t = by_name.get(tc["name"])
             if t is None:
                 out = f"Unknown tool: {tc['name']}"
@@ -199,6 +214,7 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
                     out = f"Tool error: {e}"
             out = out if isinstance(out, str) else (
                 "".join(p.get("text", "") for p in out if isinstance(p, dict)) if isinstance(out, list) else str(out))
+            out = render_flags(out, ctx.user)
             source = "native" if tc["name"] in TOOLS else "mcp"
             untrusted = source == "mcp" or tc["name"] in CONTENT_TOOLS
             if untrusted and c.get("llm_guard_context") and guard_cfg.get("enabled"):
@@ -220,6 +236,18 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
             return {"reply": reply}
         if state.get("messages") and getattr(state["messages"][-1], "tool_calls", None):
             reply = reply or "I couldn't finish that request within my step limit."
+        urls = external_resources(reply)
+        if urls:
+            trace["external_requests"] = urls
+        for name, check in (("block_secret_literal", secret_literal), ("secret_fuzzy_block", secret_fuzzy),
+                            ("secret_decode_check", secret_decoded)):
+            if c.get(name) and reply and any(check(reply, s) for s in ctx.secrets):
+                ctx.event("guard", guard=name, detail="reply would reveal the protected secret")
+                reply = "🔒 [blocked: that reply would have revealed the vault password]"
+        if c.get("sanitize_markdown") and reply:
+            reply, removed = sanitize_markdown(reply)
+            for u in removed:
+                ctx.event("guard", guard="markdown_sanitized", detail=u[:120])
         if c.get("output_filter") and reply:
             reply, hits = filter_output(reply, ctx.agent.system_prompt)
             for h in hits:
@@ -313,6 +341,7 @@ def run_turn(db, agent, user, session, user_text: str) -> dict:
 
 
 def _finish(db, ctx, session, user_text, reply, trace, started):
+    ctx.usage_total = trace["usage"]["input"] + trace["usage"]["output"]
     keys = evaluate(ctx, reply)
     trace["solved"] = record_solves(db, ctx, keys, evidence=reply[:300])
     trace["retrieved"] = [{k: h.get(k) for k in ("title", "access", "similarity", "injection", "text", "llm_guard")}

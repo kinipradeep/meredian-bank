@@ -102,3 +102,20 @@ input, select, textarea { font:inherit; padding:8px 10px; border:1px solid #C8D1
 @media (max-width:900px) { .hero, .grid-3, .grid-2, .features, .chat-layout.with-xray { grid-template-columns:1fr; } .chat, .xray { height:auto; min-height:420px; } }
 pre.code{background:#0E2A47;color:#F3E7B8;padding:12px;border-radius:8px;white-space:pre-wrap;word-break:break-all;font:13px/1.5 ui-monospace,Menlo,monospace}
 details.devlogin form { display:grid; gap:10px; margin-top:10px; } details.devlogin summary { cursor:pointer; font-weight:600; color:var(--navy, #0E2A47); }
+/* ---- CTF */
+.ctf-head { display:flex; justify-content:space-between; gap:20px; align-items:flex-start; }
+.score-box { display:flex; flex-direction:column; align-items:center; gap:4px; background:var(--navy); color:#fff; border-radius:14px; padding:14px 22px; min-width:150px; }
+.score-box b { font-size:34px; color:var(--gold2); line-height:1; } .score-box small { color:#9FB3C8; }
+.flag-form { display:flex; gap:8px; margin:14px 0; } .flag-form input { flex:1; font-family:ui-monospace,Menlo,monospace; }
+.ctf-cat { margin-top:22px; }
+.ctf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+.ctf-card { display:flex; flex-direction:column; gap:6px; background:var(--card); border:1px solid var(--line); border-top:4px solid #9FB3C8; border-radius:12px; padding:14px; color:var(--ink); text-decoration:none; position:relative; }
+.ctf-card:hover { box-shadow:0 4px 14px rgba(14,42,71,.12); }
+.ctf-card.d-easy { border-top-color:#2E9E6A; } .ctf-card.d-medium { border-top-color:#D9822B; } .ctf-card.d-hard { border-top-color:#C23B5A; } .ctf-card.d-insane { border-top-color:#6B2FA0; }
+.ctf-card.solved { background:#F1FAF5; } .ctf-card .done { color:var(--good); font-weight:700; font-size:13px; }
+.ctf-top { display:flex; gap:8px; align-items:center; } .pts { font-weight:800; color:var(--navy); } .diff { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+.ctf-meta { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); } .blood { font-size:12px; color:#9B1C1C; }
+.ctf-detail { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:18px; } @media(max-width:900px){ .ctf-detail{grid-template-columns:1fr;} }
+.hint { background:#FFF8E1; border-radius:8px; padding:8px 12px; margin:6px 0; } .inline { display:inline; }
+.alert.ok { background:#DDF3E7; color:#1E6B45; } .alert.error { background:#FBE5E3; color:#9B1C1C; }
+.solvers, .feed { padding-left:20px; } .feed li, .solvers li { margin:6px 0; } tr.me td { background:#FFF8E1; }

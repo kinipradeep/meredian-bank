@@ -24,6 +24,16 @@ MIGRATIONS = [  # columns added after the first release; create_all does not alt
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(200) NOT NULL DEFAULT ''",
     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS mcp_servers JSON",
     "ALTER TABLE challenges ALTER COLUMN domain TYPE VARCHAR(200)",
+    "ALTER TABLE challenges ADD COLUMN IF NOT EXISTS category VARCHAR(60) NOT NULL DEFAULT ''",
+    "ALTER TABLE challenges ADD COLUMN IF NOT EXISTS difficulty VARCHAR(20) NOT NULL DEFAULT 'easy'",
+    "ALTER TABLE challenges ADD COLUMN IF NOT EXISTS kind VARCHAR(20) NOT NULL DEFAULT 'detector'",
+    "ALTER TABLE challenges ADD COLUMN IF NOT EXISTS hints JSON",
+    "ALTER TABLE challenges ADD COLUMN IF NOT EXISTS agent_slug VARCHAR(80) NOT NULL DEFAULT ''",
+    "ALTER TABLE challenges ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 100",
+    "ALTER TABLE challenge_solves ADD COLUMN IF NOT EXISTS points INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE challenge_solves ADD COLUMN IF NOT EXISTS first_blood BOOLEAN NOT NULL DEFAULT false",
+    # solves recorded before CTF scoring existed: award the challenge's points
+    "UPDATE challenge_solves s SET points = c.points FROM challenges c WHERE s.challenge_id = c.id AND s.points = 0",
 ]
 
 

@@ -54,6 +54,17 @@ class MockProvider(BaseProvider):
         preview = {"model": model or "mock-gullible-1", "system": system, "messages": messages,
                    "tools": [t["name"] for t in tools]}
 
+        # CTF scenarios (vault ladder, treasury, complaints, loans, statement analyst, FAQ), see mock_ctf.py
+        from .mock_ctf import plan as ctf_plan
+        ctf = ctf_plan(messages, tools, _last_user(messages), system)
+        if ctf and ctf[0] == "text":
+            return ChatResult(text=ctf[1], stop_reason="end_turn", request_preview=preview,
+                              input_tokens=len(system + str(messages)) // 4, output_tokens=len(ctf[1]) // 4)
+        if ctf and ctf[0] == "calls":
+            return ChatResult(tool_calls=[ToolCall(id="call_" + uuid.uuid4().hex[:8], name=n, arguments=a)
+                                          for n, a in ctf[1]], stop_reason="tool_use", request_preview=preview,
+                              input_tokens=len(system + str(messages)) // 4, output_tokens=30 * len(ctf[1]))
+
         # Multi-step document workflows (list -> read -> act), see mock_workflows.py
         from .mock_workflows import plan
         planned = plan(messages, tools, _last_user(messages))

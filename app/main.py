@@ -14,7 +14,7 @@ from .config import get_settings
 from .db import Base, SessionLocal, engine, migrate
 from .mcp_servers.bank import http_app as bank_http_app
 from .mcp_servers.bank import mcp as bank_mcp
-from .routers import admin, admin_drive, admin_stack, bank, chat
+from .routers import admin, admin_ctf, admin_drive, admin_stack, bank, chat, ctf as ctf_router
 
 log = logging.getLogger("airange")
 settings = get_settings()
@@ -81,6 +81,8 @@ app.include_router(chat.router)
 app.include_router(admin.router)
 app.include_router(admin_stack.router)
 app.include_router(admin_drive.router)
+app.include_router(ctf_router.router)
+app.include_router(admin_ctf.router)
 app.mount("/mcp", bank_mcp_app)
 
 

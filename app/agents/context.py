@@ -29,6 +29,17 @@ DEFAULT_CONTROLS = {
     "strip_hidden_content": False,        # give the model only the text a human can see (no white/hidden text)
     "payee_verification": False,          # pay only to the account in the vendor master; no duplicate payments
     "payment_approval_over": None,        # payments above this go to a human approval queue
+    # CTF scenarios
+    "input_keyword_block": None,          # comma-separated words that block the message (vault levels)
+    "block_secret_literal": False,        # block replies containing the protected secret verbatim
+    "secret_fuzzy_block": False,          # ...or spelled out, reversed or base64-encoded
+    "secret_decode_check": False,         # ...or any 4+ character piece of it, in any of those encodings or NATO
+    "sanitize_markdown": False,           # strip images/links to non-bank domains from replies
+    "turn_token_budget": None,            # stop calling the model after this many tokens in one turn
+    "a2a_structured": False,              # delegate to other agents with structured fields, never raw user text
+    "a2a_identity": False,                # downstream agents act with the original customer's identity
+    "offer_policy_check": False,          # loan offers must respect rate floors, caps and wording rules
+    "faq_moderation": False,              # learner FAQ submissions wait for human review
     # MCP
     "mcp_scan_descriptions": False,       # drop MCP tools whose descriptions contain hidden instructions
     "mcp_pin_tools": False,               # only allow MCP tools whose description matches the approved fingerprint
@@ -50,6 +61,10 @@ class AgentContext:
     poisoned_tools: list = field(default_factory=list)  # MCP tools loaded with hidden instructions
     mcp_loaded: list = field(default_factory=list)      # MCP tools offered to the model this turn
     files_read: list = field(default_factory=list)      # drive paths opened this turn
+    secrets: list = field(default_factory=list)         # player flags rendered into this agent's prompt
+    tool_calls: int = 0
+    usage_total: int = 0
+    faq_hits: list = field(default_factory=list)        # learner-written FAQ entries retrieved this turn
 
     @property
     def access(self) -> list[str]:

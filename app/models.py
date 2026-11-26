@@ -160,6 +160,13 @@ class Challenge(Base):
     hint: Mapped[str] = mapped_column(Text, default="")
     domain: Mapped[str] = mapped_column(String(200), default="")
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    # CTF metadata
+    category: Mapped[str] = mapped_column(String(60), default="")
+    difficulty: Mapped[str] = mapped_column(String(20), default="easy")   # easy|medium|hard|insane
+    kind: Mapped[str] = mapped_column(String(20), default="detector")     # detector (auto) | flag (submit)
+    hints: Mapped[list] = mapped_column(JSON, default=list)               # [{"text": ..., "cost": 25}]
+    agent_slug: Mapped[str] = mapped_column(String(80), default="")       # where to launch the attack
+    sort_order: Mapped[int] = mapped_column(Integer, default=100)
 
 
 class ChallengeSolve(Base):
@@ -171,6 +178,30 @@ class ChallengeSolve(Base):
     agent_id: Mapped[int | None] = mapped_column(ForeignKey("agents.id"), nullable=True)
     solved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     evidence: Mapped[str] = mapped_column(Text, default="")
+    points: Mapped[int] = mapped_column(Integer, default=0)          # awarded, incl. first-blood bonus
+    first_blood: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class HintUnlock(Base):
+    __tablename__ = "hint_unlocks"
+    __table_args__ = (UniqueConstraint("user_id", "challenge_id", "hint_index"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    challenge_id: Mapped[int] = mapped_column(ForeignKey("challenges.id"))
+    hint_index: Mapped[int] = mapped_column(Integer)
+    cost: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class FlagSubmission(Base):
+    __tablename__ = "flag_submissions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    challenge_id: Mapped[int | None] = mapped_column(ForeignKey("challenges.id"), nullable=True)
+    value: Mapped[str] = mapped_column(String(200))
+    correct: Mapped[bool] = mapped_column(Boolean, default=False)
+    note: Mapped[str] = mapped_column(String(200), default="")      # e.g. "another player's flag"
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
 # ---------------------------------------------------------------- the fictional bank
@@ -285,4 +316,48 @@ class CandidateScreening(Base):
     score: Mapped[float] = mapped_column(Float, default=0)
     decision: Mapped[str] = mapped_column(String(30), default="")      # shortlist|reject|hold
     notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+# ---------------------------------------------------------------- CTF scenario records
+
+class TreasuryTransfer(Base):
+    """Internal transfers executed by the back-office Treasury agent (agent-to-agent scenario)."""
+    __tablename__ = "treasury_transfers"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)   # originating customer
+    agent_id: Mapped[int | None] = mapped_column(ForeignKey("agents.id"), nullable=True)  # front-desk agent
+    from_account: Mapped[str] = mapped_column(String(30))
+    to_account: Mapped[str] = mapped_column(String(30))
+    amount: Mapped[float] = mapped_column(Float)
+    memo: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(20), default="done")   # done | refused
+    reason: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class LoanOffer(Base):
+    """'Binding' loan offers issued by the loan advisor agent."""
+    __tablename__ = "loan_offers"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    agent_id: Mapped[int | None] = mapped_column(ForeignKey("agents.id"), nullable=True)
+    product: Mapped[str] = mapped_column(String(30))
+    amount: Mapped[float] = mapped_column(Float)
+    rate: Mapped[float] = mapped_column(Float)
+    tenure_months: Mapped[int] = mapped_column(Integer, default=60)
+    terms: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(20), default="issued")   # issued | blocked | pending_approval
+    reason: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class FaqEntry(Base):
+    """Community FAQ: official answers plus learner-submitted ones (the data-poisoning scenario)."""
+    __tablename__ = "faq_entries"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)   # None = official
+    question: Mapped[str] = mapped_column(Text)
+    answer: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="published")   # official|published (auto, unreviewed)|pending|approved|rejected
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

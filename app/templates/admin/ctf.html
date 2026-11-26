@@ -1,0 +1,38 @@
+{% extends "admin/base_admin.html" %}{% block title %}CTF control{% endblock %}
+{% block content %}
+<div class="row-head"><h1>CTF control <span class="tag {{ 'good' if w.state=='running' else 'warn' }}">{{ w.state.replace('_',' ') }}</span>{% if w.frozen %} <span class="tag warn">scoreboard frozen</span>{% endif %}</h1>
+<div><a class="btn ghost" href="/ctf" target="_blank">Open board ↗</a> <a class="btn ghost" href="/ctf/scoreboard" target="_blank">Scoreboard ↗</a> <a class="btn ghost" href="/admin/ctf/scenarios">Scenario records</a></div></div>
+<div class="stats"><div><b>{{ players }}</b>players</div><div><b>{{ chs|selectattr('enabled')|list|length }}</b>live challenges</div><div><b>{{ counts.values()|sum }}</b>solves</div><div class="{{ 'bad' if shared else '' }}"><b>{{ shared }}</b>shared-flag attempts</div></div>
+<div class="two">
+<section class="card"><h2>Event</h2>
+<form method="post" action="/admin/ctf/event" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label class="full">Name <input name="name" value="{{ w.event.name }}"></label>
+  <label>Start <input type="datetime-local" name="start" value="{{ w.event.start }}"></label>
+  <label>End <input type="datetime-local" name="end" value="{{ w.event.end }}"></label>
+  <label>Freeze scoreboard at <input type="datetime-local" name="freeze" value="{{ w.event.freeze }}"></label>
+  <label>Time zone <input name="timezone" value="{{ w.event.timezone }}"></label>
+  <label class="check full"><input type="checkbox" name="scoreboard_public" {{ 'checked' if w.event.scoreboard_public }}> Players can see the scoreboard</label>
+  <label class="check full"><input type="checkbox" name="show_flags_on_solve" {{ 'checked' if w.event.show_flags_on_solve }}> Show players their flag when they solve (for write-ups)</label>
+  <div class="actions full"><button class="btn">Save</button></div></form>
+<p class="muted">Leave start/end empty for an always-open range. Before the start, players see a countdown and no challenges; after the end, submissions close but agents stay open for practice.</p>
+<form method="post" action="/admin/ctf/reset" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn danger">Reset the whole CTF</button></form></section>
+<section class="card"><h2>Top 10 (live, ignores freeze)</h2>
+<table><tr><th>#</th><th>Player</th><th class="r">Points</th><th class="r">Solves</th><th class="r">🩸</th></tr>
+{% for r in board %}<tr><td>{{ r.rank }}</td><td>{{ name(r.user) }} <small class="muted">{{ r.user.email }}</small></td><td class="r"><b>{{ r.points }}</b></td><td class="r">{{ r.solves }}</td><td class="r">{{ r.first_bloods or '' }}</td></tr>{% else %}<tr><td colspan="5" class="muted">No solves yet.</td></tr>{% endfor %}</table></section></div>
+<section class="card"><h2>Challenges</h2>
+<form method="post" action="/admin/ctf/challenges"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<table><tr><th>On</th><th>Challenge</th><th>Category</th><th>Difficulty</th><th>Points</th><th>Solves</th><th>Hints (JSON: text + cost)</th></tr>
+{% for c in chs %}<tr><td><input type="checkbox" name="c{{ c.id }}_enabled" {{ 'checked' if c.enabled }}></td>
+<td><b>{{ c.title }}</b><br><small class="mono muted">{{ c.slug }} · {{ c.kind }}{% if c.detector %} · {{ c.detector }}{% endif %} · {{ c.agent_slug }}</small></td>
+<td><input name="c{{ c.id }}_category" value="{{ c.category }}" size="16"></td>
+<td><select name="c{{ c.id }}_difficulty">{% for d in ['easy','medium','hard','insane'] %}<option {{ 'selected' if d==c.difficulty }}>{{ d }}</option>{% endfor %}</select></td>
+<td><input name="c{{ c.id }}_points" type="number" value="{{ c.points }}" style="width:80px"></td>
+<td>{{ counts.get(c.id, 0) }}<br><small class="muted">{{ hint_counts.get(c.id, 0) }} hints</small></td>
+<td><textarea name="c{{ c.id }}_hints" rows="2" cols="40">{{ c.hints|tojson }}</textarea></td></tr>{% endfor %}</table>
+<div class="actions"><button class="btn">Save challenges</button></div></form></section>
+<section class="card"><h2>Flag submissions</h2>
+<table><tr><th>When</th><th>Player</th><th>Flag</th><th>Result</th></tr>
+{% for s in subs %}<tr><td class="nowrap"><small>{{ s.created_at.strftime('%d %b %H:%M:%S') }}</small></td><td><small>{{ users[s.user_id].email if s.user_id in users else '' }}</small></td>
+<td class="mono"><small>{{ s.value[:60] }}</small></td><td>{% if s.correct %}<span class="tag good">correct</span>{% else %}<span class="tag {{ 'bad' if s.note.startswith('flag belongs') else '' }}">{{ s.note or 'wrong' }}</span>{% endif %}</td></tr>
+{% else %}<tr><td colspan="4" class="muted">No submissions yet.</td></tr>{% endfor %}</table></section>
+{% endblock %}

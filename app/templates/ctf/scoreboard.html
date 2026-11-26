@@ -1,0 +1,18 @@
+{% extends "base_bank.html" %}
+{% block title %}Scoreboard · CTF{% endblock %}
+{% block content %}
+<div class="ctf-head"><div><h1>Scoreboard</h1><p class="muted">{{ w.event.name }} · {{ rows|length }} players · {{ max_points }} points available{% if w.frozen %} · <b>frozen</b> since {{ w.freeze.strftime('%H:%M') }}{% endif %}</p></div>
+<a class="btn ghost" href="/ctf">← Challenge board</a></div>
+<div class="ctf-detail">
+<section class="panel"><table class="txns">
+<tr><th>#</th><th>Player</th><th class="r">Points</th><th class="r">Solves</th><th class="r">🩸</th><th class="r">Hints</th><th>Last solve</th></tr>
+{% for r in rows %}<tr class="{{ 'me' if r.user.id == user.id }}"><td>{% if r.rank == 1 %}🥇{% elif r.rank == 2 %}🥈{% elif r.rank == 3 %}🥉{% else %}{{ r.rank }}{% endif %}</td>
+<td><b>{{ name(r.user) }}</b>{% if r.user.id == user.id %} <span class="tag">you</span>{% endif %}</td>
+<td class="r"><b>{{ r.points }}</b></td><td class="r">{{ r.solves }}</td><td class="r">{{ r.first_bloods or '' }}</td><td class="r">{% if r.hint_cost %}−{{ r.hint_cost }}{% endif %}</td>
+<td><small class="muted">{{ r.last.strftime('%d %b %H:%M') }}</small></td></tr>
+{% else %}<tr><td colspan="7" class="muted">No solves yet.</td></tr>{% endfor %}</table>
+<p class="muted small">Ties go to whoever reached the score first. First blood earns +10%; unlocked hints are deducted.</p></section>
+<aside class="panel"><h2>Latest solves</h2>
+<ul class="feed">{% for n, c, s in feed %}<li>{% if s.first_blood %}🩸 {% endif %}<b>{{ n }}</b> solved <a href="/ctf/c/{{ c.slug }}">{{ c.title }}</a> <small class="muted">{{ s.solved_at.strftime('%H:%M') }} · +{{ s.points }}</small></li>{% else %}<li class="muted">Nothing yet.</li>{% endfor %}</ul></aside>
+</div>
+{% endblock %}

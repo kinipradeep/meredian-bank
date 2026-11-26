@@ -1,6 +1,14 @@
 # Changelog
 
 ## 2026-11-26
+- **CTF platform:**
+  - challenge board, challenge pages, flag submission, scoreboard;
+  - personal HMAC flags with shared-flag detection, first-blood bonus, hints with point costs, event window and scoreboard freeze;
+  - admin CTF control and scenario records.
+- **11 new challenges:**
+  - the Vault Keeper prompt-injection ladder (6 levels);
+  - an agent-to-agent Treasury heist (Aiden → internal Treasury agent);
+  - markdown image exfiltration (Nova), a rogue binding loan offer (Leo), denial of wallet (Echo), FAQ poisoning (Faye).
 - **MCP Python SDK 2.3:** both MCP servers migrated from `FastMCP` to `MCPServer`. Our own MCP client (`app/integrations/mcp_client.py`) replaces `langchain-mcp-adapters`, which does not support mcp 2 yet. Pinned tool fingerprints stay valid.
 - **MeriDrive:** 30 fictional bank files (PDF, Word, email, CSV, JSON, YAML) with poisoned documents.
   - New file, payment and screening tools.

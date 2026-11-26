@@ -11,7 +11,7 @@ Header: Authorization: Bearer {{ new_token if new_token else '&lt;your token&gt;
 {% endif %}
 {% endblock %}
 {% block content %}
-<div class="lab-head"><div><h1>Training lab</h1><p class="muted">Attack the bank's AI systems. Each challenge maps to an exam domain.</p></div>
+<div class="lab-head"><div><h1>Training lab</h1><p class="muted">Attack the bank's AI systems. Each challenge maps to an exam domain. <a class="btn small gold" href="/ctf">Open the CTF board →</a></p></div>
   <div class="score"><b>{{ score }}</b><span>points</span></div></div>
 <div class="grid-2">
   {% for c in challenges %}

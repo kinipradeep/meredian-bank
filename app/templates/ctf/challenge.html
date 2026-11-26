@@ -1,0 +1,29 @@
+{% extends "base_bank.html" %}
+{% block title %}{{ ch.title }} · CTF{% endblock %}
+{% block content %}
+<p><a href="/ctf">← Challenge board</a></p>
+<div class="ctf-detail">
+<section class="panel">
+  <div class="ctf-top"><span class="pts">{{ ch.points }} pts</span><span class="diff d-{{ ch.difficulty }}">{{ ch.difficulty }}</span><span class="tag">{{ ch.category }}</span>{% if solve %}<span class="tag good">Solved{% if solve.first_blood %} · first blood 🩸{% endif %}</span>{% endif %}</div>
+  <h1>{{ ch.title }}</h1>
+  <p>{{ ch.description }}</p>
+  <p class="muted small">{{ ch.domain }}</p>
+  {% if launch %}<a class="btn gold" href="{{ launch }}">Launch the target agent →</a>{% endif %}
+  {% if flash %}<div class="alert {{ 'ok' if flash.kind=='ok' else 'error' }}">{{ flash.msg }}</div>{% endif %}
+  {% if solve %}
+    <div class="alert ok">Solved {{ solve.solved_at.strftime('%d %b %H:%M') }} for {{ solve.points }} points.{% if flag %} Your flag: <span class="mono">{{ flag }}</span>{% endif %}</div>
+  {% else %}
+    <p class="muted">{% if ch.kind == 'flag' %}Find the flag and submit it.{% else %}This challenge is detected automatically when your attack succeeds (the chat shows a banner). You can also submit its flag.{% endif %}</p>
+    <form method="post" action="/ctf/submit" class="flag-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="next" value="/ctf/c/{{ ch.slug }}">
+      <input name="flag" placeholder="MERIDIAN{...}" required autocomplete="off" spellcheck="false"><button class="btn gold">Submit flag</button></form>
+  {% endif %}
+  <h2 id="hints">Hints</h2>
+  {% for h in ch.hints or [] %}
+    {% if loop.index0 in unlocked %}<div class="hint">💡 {{ h.text }} <small class="muted">(−{{ h.cost }})</small></div>
+    {% else %}<form method="post" action="/ctf/c/{{ ch.slug }}/hint/{{ loop.index0 }}" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small ghost">Unlock hint {{ loop.index }} (costs {{ h.cost }} points)</button></form>{% endif %}
+  {% else %}<p class="muted">No hints for this one.</p>{% endfor %}
+</section>
+<aside class="panel"><h2>Solves ({{ nsolves }})</h2>
+  <ol class="solvers">{% for name, s in solvers %}<li>{{ name }} <small class="muted">{{ s.solved_at.strftime('%d %b %H:%M') }}</small>{% if s.first_blood %} 🩸{% endif %}</li>{% else %}<p class="muted">Nobody yet: first blood earns +10%.</p>{% endfor %}</ol></aside>
+</div>
+{% endblock %}

@@ -62,7 +62,7 @@ def verify_csrf(request: Request, submitted: str | None) -> None:
 _hits: dict[int, deque] = defaultdict(deque)
 
 
-def check_rate(user_id: int, per_minute: int = 20) -> None:
+def check_rate(user_id, per_minute: int = 20) -> None:
     q = _hits[user_id]
     t = time.time()
     while q and t - q[0] > 60:

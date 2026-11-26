@@ -1,0 +1,23 @@
+{% extends "admin/base_admin.html" %}{% block title %}Scenario records{% endblock %}
+{% block content %}
+<div class="row-head"><h1>CTF scenario records</h1><a class="btn ghost" href="/admin/ctf">← CTF control</a></div>
+<section class="card"><h2>Treasury transfers <small class="muted">(agent-to-agent scenario)</small></h2>
+<table><tr><th>When</th><th>Requested by</th><th>Via</th><th>From → To</th><th class="r">Amount</th><th>Status</th></tr>
+{% for t in transfers %}<tr><td class="nowrap"><small>{{ t.created_at.strftime('%d %b %H:%M') }}</small></td><td><small>{{ users[t.user_id].email if t.user_id in users else '' }}</small></td>
+<td class="mono"><small>{{ agents[t.agent_id].slug if t.agent_id in agents else '' }}</small></td><td class="mono"><small>{{ t.from_account }} → {{ t.to_account }}</small></td><td class="r">{{ t.amount|inr }}</td>
+<td><span class="tag {{ 'bad' if t.status=='done' else 'good' }}">{{ t.status }}</span>{% if t.reason %}<br><small class="muted">{{ t.reason }}</small>{% endif %}</td></tr>
+{% else %}<tr><td colspan="6" class="muted">No transfers.</td></tr>{% endfor %}</table></section>
+<section class="card"><h2>Loan offers</h2>
+<table><tr><th>When</th><th>Customer</th><th>Agent</th><th>Product</th><th class="r">Amount</th><th class="r">Rate</th><th>Terms</th><th>Status</th></tr>
+{% for o in offers %}<tr><td class="nowrap"><small>{{ o.created_at.strftime('%d %b %H:%M') }}</small></td><td><small>{{ users[o.user_id].email if o.user_id in users else '' }}</small></td>
+<td class="mono"><small>{{ agents[o.agent_id].slug if o.agent_id in agents else '' }}</small></td><td>{{ o.product }}</td><td class="r">{{ o.amount|inr }}</td><td class="r">{{ o.rate }}%</td><td><small>{{ o.terms[:100] }}</small></td>
+<td><span class="tag {{ 'good' if o.status=='blocked' else ('bad' if o.rate < 7 else '') }}">{{ o.status }}</span>{% if o.reason %}<br><small class="muted">{{ o.reason }}</small>{% endif %}</td></tr>
+{% else %}<tr><td colspan="8" class="muted">No offers.</td></tr>{% endfor %}</table></section>
+<section class="card" id="faq"><h2>Community FAQ <small class="muted">(poisoning scenario; learner entries are only visible to their author)</small></h2>
+<table><tr><th>#</th><th>Author</th><th>Question and answer</th><th>Status</th><th></th></tr>
+{% for e in faq %}<tr><td>{{ e.id }}</td><td><small>{{ users[e.user_id].email if e.user_id in users else 'official' }}</small></td>
+<td><b>{{ e.question }}</b><br><small>{{ e.answer[:240] }}</small></td><td><span class="tag {{ 'warn' if e.status=='pending' else ('good' if e.status in ['official','approved'] else '') }}">{{ e.status }}</span></td>
+<td class="nowrap">{% if e.status in ['pending','published'] %}<form method="post" action="/admin/ctf/faq/{{ e.id }}/approve" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small">Approve</button></form>{% endif %}
+{% if e.user_id and e.status in ['pending','published','approved'] %}<form method="post" action="/admin/ctf/faq/{{ e.id }}/reject" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small danger">{{ 'Reject' if e.status=='pending' else 'Remove' }}</button></form>{% endif %}</td></tr>
+{% endfor %}</table></section>
+{% endblock %}

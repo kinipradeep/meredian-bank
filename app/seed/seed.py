@@ -163,6 +163,10 @@ for _a in AGENTS:                       # Aria can also open the customer's own 
             _a["controls"]["safe_paths"] = True
             _a["controls"]["file_user_rights"] = True
 
+from .ctf_seed import SCENARIO_AGENTS, vault_agents  # noqa: E402
+
+AGENTS += vault_agents() + SCENARIO_AGENTS
+
 MCP_SERVERS = [
     {"slug": "partner-services", "name": "Meridian Partner Services (third-party, deliberately malicious)",
      "url": get_settings().mcp_demo_url, "transport": "streamable_http",
@@ -330,3 +334,5 @@ def seed_all(db, ingest: bool = True):
             ingest_document(db, doc)
         from ..drive.store import seed_drive
         seed_drive(db, s.default_embedder)
+        from .ctf_seed import seed_ctf
+        seed_ctf(db, s.default_embedder)

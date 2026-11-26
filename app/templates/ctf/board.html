@@ -1,0 +1,31 @@
+{% extends "base_bank.html" %}
+{% block title %}CTF · Meridian Bank{% endblock %}
+{% block content %}
+<div class="ctf-head">
+  <div><h1>{{ w.event.name }}</h1>
+    <p class="muted">Break Meridian Bank's AI agents. Some challenges are detected automatically when your attack works; others hide a flag <span class="mono">MERIDIAN{…}</span> that you submit below. Flags are personal: sharing them doesn't work.</p>
+    {% if w.state == 'not_started' %}<div class="alert">The CTF starts {{ w.start.strftime('%d %b %Y, %H:%M') }} ({{ w.event.timezone }}).</div>
+    {% elif w.state == 'ended' %}<div class="alert">The CTF has ended. The agents stay open for practice; scores are final.</div>
+    {% elif w.end %}<div class="alert">Ends {{ w.end.strftime('%d %b, %H:%M') }} ({{ w.event.timezone }}){% if w.frozen %} · scoreboard frozen{% endif %}</div>{% endif %}
+  </div>
+  <div class="score-box"><b>{{ score }}</b><span>points</span>{% if rank %}<small>rank {{ rank }} of {{ players }}</small>{% endif %}
+    <a class="btn small ghost" href="/ctf/scoreboard">Scoreboard</a></div>
+</div>
+{% if flash %}<div class="alert {{ 'ok' if flash.kind=='ok' else 'error' }}">{{ flash.msg }}</div>{% endif %}
+<form method="post" action="/ctf/submit" class="flag-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="next" value="/ctf">
+  <input name="flag" placeholder="MERIDIAN{...}" required autocomplete="off" spellcheck="false"><button class="btn gold">Submit flag</button></form>
+<p class="muted small">{{ mine|length }} of {{ total }} solved</p>
+{% for cat, items in cats.items() %}
+<h2 class="ctf-cat">{{ cat }}</h2>
+<div class="ctf-grid">
+{% for c in items %}<a class="ctf-card {{ 'solved' if c.id in mine }} d-{{ c.difficulty }}" href="/ctf/c/{{ c.slug }}">
+  <div class="ctf-top"><span class="pts">{{ c.points }}</span><span class="diff">{{ c.difficulty }}</span></div>
+  <b>{{ c.title }}</b>
+  <div class="ctf-meta"><span>{{ 'submit a flag' if c.kind=='flag' else 'auto-detected' }}</span><span>{{ counts[c.id] }} solve{{ '' if counts[c.id]==1 else 's' }}</span></div>
+  {% if first.get(c.id) %}<div class="blood">🩸 {{ first[c.id] }}</div>{% endif %}
+  {% if c.id in mine %}<div class="done">✓ Solved</div>{% endif %}
+</a>{% endfor %}
+</div>
+{% else %}{% if w.state == 'not_started' %}<p class="muted">Challenges appear when the CTF starts.</p>{% endif %}
+{% endfor %}
+{% endblock %}

@@ -22,7 +22,7 @@ if ids: get(a, f"/admin/agents/{ids[0]}")
 r = a.get("/admin/rag/c/meridian-kb"); d = re.findall(r'/admin/rag/doc/(\d+)', r.text)
 if d: get(a, f"/admin/rag/doc/{d[0]}?chunk=1")
 print("pages bad:", bad)
-u = login("learner-smoke@range.test")
+u = login("learner-smoke3@range.test")
 import re as _r
 T = _r.findall(r"TXN-\d+", u.get("/transactions").text)
 print("txns", T[:3])

@@ -63,6 +63,10 @@
       `<div class="xchunk ${m.suspicious ? "inj" : ""}"><div class="xchunk-h"><b>${esc(m.server)}/${esc(m.tool)}</b> <span class="muted">${esc(m.fingerprint)}</span>` +
       `${m.suspicious ? ' <span class="tag bad">hidden instructions</span>' : ""}</div><pre>${esc(m.description)}</pre></div>`).join(""), mt.some((m) => m.suspicious)));
 
+    const ext = t.external_requests || [];
+    if (ext.length) xbody.appendChild(section(`Staff dashboard would load ${ext.length} external URL(s)`, ext.map((u) =>
+      `<div class="xev guard"><b>GET</b> ${esc(u)}</div>`).join("") + '<p class="muted">A markdown renderer fetches images automatically: whatever is in the URL leaves the bank.</p>', true));
+
     const lg = t.llm_guard || {};
     const lgRows = Object.entries(lg).map(([stage, sc]) => `<div><b>${esc(stage)}</b> ` + Object.entries(sc || {}).map(([k, v]) =>
       `<span class="tag ${v > 0 ? "bad" : ""}">${esc(k)} ${Number(v).toFixed(2)}</span>`).join(" ") + "</div>");
@@ -86,7 +90,9 @@
   function showSolved(list) {
     if (!list || !list.length) return;
     solvedBox.hidden = false;
-    solvedBox.innerHTML = "🏁 Challenge solved: <b>" + list.map(esc).join(", ") + "</b>. See your score in the Training lab.";
+    solvedBox.innerHTML = list.map((s) => typeof s === "string" ? `🏁 Challenge solved: <b>${esc(s)}</b>` :
+      `🏁 Solved <b>${esc(s.title)}</b> (+${s.points}${s.first_blood ? " · first blood 🩸" : ""}). Flag: <span class="mono">${esc(s.flag)}</span>`
+    ).join("<br>") + ' · <a href="/ctf">CTF board</a>';
   }
 
   async function load() {

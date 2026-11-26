@@ -28,6 +28,7 @@ No Docker: everything is installed natively on one Ubuntu 24.04 VM, with Python 
 | **LLM Guard** | ML scanners (prompt injection, secrets, invisible text, PII, banned output) on the input, on retrieved/tool context and on the output. | **Guardrails**: service status, scanner selection, per-agent switches, a playground, recent guard decisions |
 | **MCP** (official MCP Python SDK v2) | Agents load tools from MCP servers. A malicious demo server shows tool poisoning and rug pulls, and the bank exposes its own tools over MCP. | **MCP servers**: register servers, inspect the tool descriptions the model sees, pin approved fingerprints, trigger the rug pull, configure the bank endpoint, see every MCP call |
 | **MeriDrive** (bank file estate) | 30+ fictional bank files the agents read: statements and KYC records, invoices, a vendor master, resumes, runbooks, secret configs, board minutes. Formats include PDF, Word, email, CSV, JSON, YAML and Markdown. Poisoned files hide instructions in white 1-pt text, hidden Word runs, HTML comments or zero-width characters. | **MeriDrive**: browse, upload, edit access levels, see *what the model sees vs what a human sees*, re-index, reset for a new cohort. Also **Vendor payments** (approve/reject) and **Candidate screenings**. |
+| **CTF engine** | **21 challenges in 13 categories**, from easy to insane. Personal HMAC flags (sharing doesn't work), auto-detected and submit-a-flag challenges, first blood, hints with point costs, scoreboard with freeze, event start/end | **CTF control**: event window, per-challenge points/difficulty/hints, submission log with shared-flag detection, reset. **Scenario records**: treasury transfers, loan offers, FAQ moderation |
 | **Chroma + fastembed** | Vector database and local embeddings | **Vector database**: chunking, embeddings, raw vectors, filtered vs unfiltered search, 2D map, playground |
 
 ## Attacks and defences
@@ -44,6 +45,12 @@ No Docker: everything is installed natively on one Ubuntu 24.04 VM, with Python 
 | **Shortlist an unqualified applicant**: white text in a resume; another resume tries to email the salary file | Hira v1 (HR screening) | hidden-text stripping, folder sandbox (`safe_paths`), email allowlist |
 | **Steal the gateway key**: `../` path traversal out of the runbooks folder | Ops copilot v1 | `safe_paths` (normalise before checking), output secret filter |
 | **Leak board M&A minutes** via unfiltered document search | Ops copilot v1 | `file_user_rights` (search only what the user may read) |
+| **Vault Keeper ladder**: 6 levels of escalating guardrails around a password | Vault Keeper 1–6 | prompt rule → literal filter → keyword block → fuzzy decode → 4-char decode check (beaten by multi-turn slicing) |
+| **Agent-to-agent heist**: the front desk forwards your words to a trusting Treasury agent | Aiden v1 | structured delegation, identity propagation |
+| **Markdown image exfiltration** (insecure output handling) | Nova v1 | markdown sanitising, token redaction |
+| **Rogue "binding" loan offer** | Leo v1 | policy checks on the tool |
+| **Denial of wallet** | Echo v1 | step limit, per-turn token budget |
+| **FAQ / knowledge poisoning** through customer feedback | Faye v1 | moderation queue, reviewed-only retrieval |
 | **Another customer's statement**: `../MB-200101/...` from the learner's own folder | Aria v1 | `safe_paths` + `file_user_rights` |
 
 The seeded agents use the **offline demo model**, so every attack works before you add a single API key. Add models in the LLM gateway, then use **Agents → Apply to all agents**.

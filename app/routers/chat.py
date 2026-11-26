@@ -22,7 +22,7 @@ class ChatIn(BaseModel):
 
 def _agent(db, slug) -> Agent:
     a = db.query(Agent).filter_by(slug=slug).first()
-    if not a or not a.enabled:
+    if not a or not a.enabled or a.surface == "internal":     # internal agents only talk to agents
         raise HTTPException(404, "This assistant is offline.")
     return a
 
