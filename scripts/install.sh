@@ -1,24 +1,41 @@
 #!/usr/bin/env bash
-# Native install (no Docker) on a fresh Ubuntu 24.04 VM — Linode or any cloud. Run as root:
+# One-command install AND deploy of the Meridian Bank range on a fresh Ubuntu 24.04 VM (no Docker).
+# Run as root on the VM:
 #
-#   bash install.sh <git-ssh-url> <domain> <admin-email> [--no-llm-guard] [--with-ollama]
-#   e.g. bash install.sh git@github.com:kinipradeep/meredian-bank.git range.example.com you@example.com
+#   curl -fsSL https://raw.githubusercontent.com/kinipradeep/meredian-bank/main/scripts/install.sh \
+#     | bash -s -- range.example.com you@example.com
 #
-# Installs: Postgres 16 (apt), Caddy (apt, automatic HTTPS), Python 3.12 virtualenvs for the app + Chroma,
-# LiteLLM and LLM Guard, and systemd services for each. Safe to re-run.
+# Options (after the email):
+#   --google-id ID --google-secret SECRET   Google OAuth client (can also be added to .env later)
+#   --no-llm-guard                          skip LLM Guard (fits a 4 GB VM)
+#   --with-ollama                           also install Ollama for local open-weights models
+#   --repo URL --branch NAME                deploy another repo/branch (an SSH URL triggers the deploy-key flow)
+#
+# It installs Postgres 16, Caddy (automatic HTTPS), Python virtualenvs for the app + Chroma, LiteLLM and
+# LLM Guard, systemd services, firewall, swap and backups; then fetches the code from GitHub and starts it.
+# Re-running it pulls the latest code from GitHub and redeploys (secrets in .env are kept).
 set -euo pipefail
 
-REPO="${1:?usage: install.sh <git-ssh-url> <domain> <admin-email> [--no-llm-guard] [--with-ollama]}"
-DOMAIN="${2:?domain}"
-EMAIL="${3:?admin email}"
-shift 3
-WITH_GUARD=1; WITH_OLLAMA=0
-for a in "$@"; do
-  case "$a" in
+# Everything runs inside main() so `curl ... | bash` reads the whole script before executing it.
+main() {
+USAGE="usage: install.sh <domain> <admin-email> [--google-id ID --google-secret S] [--no-llm-guard] [--with-ollama] [--repo URL] [--branch B]"
+DOMAIN="${1:?$USAGE}"
+EMAIL="${2:?$USAGE}"
+shift 2
+REPO="https://github.com/kinipradeep/meredian-bank.git"
+BRANCH=main
+WITH_GUARD=1; WITH_OLLAMA=0; GOOGLE_ID=""; GOOGLE_SECRET=""
+while [ $# -gt 0 ]; do
+  case "$1" in
     --no-llm-guard) WITH_GUARD=0 ;;
     --with-ollama) WITH_OLLAMA=1 ;;
-    *) echo "unknown option $a"; exit 1 ;;
+    --google-id) GOOGLE_ID="${2:?}"; shift ;;
+    --google-secret) GOOGLE_SECRET="${2:?}"; shift ;;
+    --repo) REPO="${2:?}"; shift ;;
+    --branch) BRANCH="${2:?}"; shift ;;
+    *) echo "unknown option $1"; echo "$USAGE"; exit 1 ;;
   esac
+  shift
 done
 
 APP=/opt/airange
@@ -64,25 +81,31 @@ airange ALL=(root) NOPASSWD: /usr/bin/systemctl restart airange-*, /usr/bin/syst
 SUDO
 chmod 440 /etc/sudoers.d/airange && visudo -cf /etc/sudoers.d/airange >/dev/null
 
-if [ ! -d "$APP/.git" ]; then
-  cat <<MSG
-
-------------------------------------------------------------------------------
-Add this READ-ONLY deploy key to GitHub:
-  repo > Settings > Deploy keys > Add deploy key  (leave "Allow write access" unticked)
-
-$(cat /home/airange/.ssh/id_ed25519.pub)
-------------------------------------------------------------------------------
-MSG
-  read -rp "Press Enter once the key is added... " _
-  step "Cloning $REPO"
-  install -d -o airange -g airange "$APP"
-  as_app git clone -q "$REPO" "$APP"
+step "Fetching the code: $REPO ($BRANCH)"
+if [[ "$REPO" == git@* ]] && ! as_app git ls-remote -q "$REPO" >/dev/null 2>&1; then
+  echo "Private repo over SSH: add this READ-ONLY deploy key to GitHub (repo > Settings > Deploy keys):"
+  echo; cat /home/airange/.ssh/id_ed25519.pub; echo
+  if [ -e /dev/tty ]; then read -rp "Press Enter once the key is added... " _ < /dev/tty
+  else echo "Then re-run this script."; exit 1; fi
 fi
+install -d -o airange -g airange "$APP"
+if [ -d "$APP/.git" ]; then
+  as_app git -C "$APP" remote set-url origin "$REPO"
+  as_app git -C "$APP" fetch -q origin "$BRANCH"
+  as_app git -C "$APP" checkout -q -B "$BRANCH" "origin/$BRANCH"
+  as_app git -C "$APP" reset -q --hard "origin/$BRANCH"
+else
+  as_app git clone -q --branch "$BRANCH" "$REPO" "$APP"
+fi
+echo "Deploying commit $(as_app git -C "$APP" log -1 --format='%h %s')"
 install -d -o airange -g airange "$DATA" "$DATA/chroma" "$DATA/models" "$DATA/litellm" "$DATA/hf" "$APP/backups"
 
 step "Configuration (.env with generated secrets)"
 as_app bash "$APP/scripts/gen-env.sh" "$DOMAIN" "$EMAIL"
+setenv() { sed -i "s|^$1=.*|$1=$2|" "$APP/.env"; }
+[ -n "$GOOGLE_ID" ] && setenv GOOGLE_CLIENT_ID "$GOOGLE_ID"
+[ -n "$GOOGLE_SECRET" ] && setenv GOOGLE_CLIENT_SECRET "$GOOGLE_SECRET"
+setenv DOMAIN "$DOMAIN"; setenv BASE_URL "https://$DOMAIN"
 # shellcheck disable=SC1091
 set -a; . "$APP/.env"; set +a
 
@@ -144,7 +167,7 @@ step "Nightly backups (02:15)"
 ( crontab -u airange -l 2>/dev/null | grep -v backup.sh; echo "15 2 * * * $APP/scripts/backup.sh >> $APP/backups/backup.log 2>&1" ) | crontab -u airange -
 
 step "Waiting for the app"
-for i in $(seq 1 60); do curl -fs http://127.0.0.1:8080/healthz >/dev/null && break; sleep 3; done
+for _ in $(seq 1 60); do curl -fs http://127.0.0.1:8080/healthz >/dev/null && break; sleep 3; done
 curl -fs http://127.0.0.1:8080/healthz >/dev/null && echo "App is up." || { echo "App not healthy yet: journalctl -u airange-app -n 50"; }
 
 IP=$(curl -fs4 ifconfig.me || hostname -I | awk '{print $1}')
@@ -155,11 +178,12 @@ cat <<MSG
 
  1. DNS: A records  $DOMAIN  and  gateway.$DOMAIN  ->  $IP
 
- 2. Google sign-in: add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to $APP/.env
-      sudo -u airange nano $APP/.env && systemctl restart airange-app
-    (redirect URI: https://$DOMAIN/auth/callback)
+ 2. Google sign-in: $( [ -n "$(grep '^GOOGLE_CLIENT_ID=.' "$APP/.env")" ] && echo "configured." || echo "add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to $APP/.env
+      (sudo -u airange nano $APP/.env && systemctl restart airange-app), or re-run with --google-id/--google-secret" )
+    Redirect URI to register in Google Cloud: https://$DOMAIN/auth/callback
 
- 3. GitHub repo > Settings > Secrets and variables > Actions, add:
+ 3. Updates: re-run this script any time, or let GitHub Actions deploy every push to main.
+    For automatic deploys add to GitHub repo > Settings > Secrets and variables > Actions:
       VM_HOST         $IP
       VM_USER         airange
       VM_SSH_KEY      (private key below, including BEGIN/END lines)
@@ -177,3 +201,6 @@ $(ssh-keyscan -q -t ed25519 localhost 2>/dev/null | sed "s/^localhost/$IP/")
  Logs:  journalctl -u airange-app -f   (also airange-litellm, airange-llm-guard, airange-chroma)
 ==============================================================================
 MSG
+}
+
+main "$@" < /dev/null

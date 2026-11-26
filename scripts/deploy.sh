@@ -33,7 +33,7 @@ fi
 echo "==> Restarting the app and the MCP demo server"
 sudo systemctl restart airange-mcp-demo
 sudo systemctl restart airange-app
-for i in $(seq 1 60); do
+for _ in $(seq 1 60); do
   if curl -fs http://127.0.0.1:8080/healthz >/dev/null; then
     echo "==> Healthy at $(git rev-parse --short HEAD)"; exit 0
   fi

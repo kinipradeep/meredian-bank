@@ -49,24 +49,22 @@ The seeded agents use the **offline demo model**, so every attack works before y
 ### 1. Create the VM and point DNS
 Create an Ubuntu 24.04 Linode. Add A records for `range.example.com` and `gateway.range.example.com`, both pointing to its IP.
 
-### 2. Install (one time, as root)
-The repo is private, so copy the installer over and run it:
+### 2. Install and deploy: one command, as root on the VM
 ```bash
-scp scripts/install.sh root@<vm-ip>:
-ssh root@<vm-ip>
-bash install.sh git@github.com:kinipradeep/meredian-bank.git range.example.com you@example.com
-#   options: --no-llm-guard   --with-ollama (local open-weights models)
+curl -fsSL https://raw.githubusercontent.com/kinipradeep/meredian-bank/main/scripts/install.sh \
+  | bash -s -- range.example.com you@example.com
+#   options: --google-id ID --google-secret SECRET   --no-llm-guard   --with-ollama   --repo URL --branch NAME
 ```
-The installer:
+`install.sh` sets up the VM and **deploys the code from GitHub**:
 1. installs Postgres 16, Caddy, Python 3.12, a firewall (22/80/443), fail2ban, unattended upgrades and swap;
-2. creates the `airange` service user, prints a **read-only deploy key** for GitHub → repo → *Settings → Deploy keys*, then clones the repo into `/opt/airange`;
+2. creates the `airange` service user and fetches the repo from GitHub into `/opt/airange`;
 3. generates `/opt/airange/.env` with **every secret randomised**, then creates the `airange` and `litellm` databases;
-4. builds three virtualenvs (app + Chroma, LiteLLM, LLM Guard) and installs these systemd services:
+4. builds three virtualenvs (app + Chroma, LiteLLM, LLM Guard) and starts these systemd services:
    `airange-app`, `airange-chroma`, `airange-litellm`, `airange-llm-guard`, `airange-mcp-demo`;
-5. configures Caddy for `range.example.com` and `gateway.range.example.com`, and sets up nightly backups;
-6. prints the **GitHub Actions secrets** and the logins.
+5. configures Caddy for `range.example.com` and `gateway.range.example.com`, sets up nightly backups and waits for the app to report healthy;
+6. prints your logins and the optional GitHub Actions secrets.
 
-It's safe to re-run, for example after changing the systemd unit files.
+**To update, run the same command again.** It pulls the latest `main` from GitHub, reinstalls and restarts everything, and keeps your `.env` and data. (If you ever make the repo private, pass an SSH `--repo git@github.com:...` URL; the script then prints a read-only deploy key to add on GitHub.)
 
 ### 3. Google sign-in
 In Google Cloud Console, go to **APIs & Services**. Set up the OAuth consent screen (External, scopes `openid email profile`), then create an **OAuth client ID** of type Web application with:
@@ -75,8 +73,8 @@ In Google Cloud Console, go to **APIs & Services**. Set up the OAuth consent scr
 
 Put the ID and secret in `/opt/airange/.env`, then run `systemctl restart airange-app`.
 
-### 4. Continuous deployment
-Add the secrets the installer printed (`VM_HOST`, `VM_USER=airange`, `VM_SSH_KEY`, `VM_KNOWN_HOSTS`) under GitHub → *Settings → Secrets and variables → Actions*.
+### 4. Optional: deploy automatically on every push
+Re-running `install.sh` is enough to update. For hands-off updates, add the secrets the installer printed (`VM_HOST`, `VM_USER=airange`, `VM_SSH_KEY`, `VM_KNOWN_HOSTS`) under GitHub → *Settings → Secrets and variables → Actions*.
 
 From then on, every push to **main** runs `.github/workflows/ci-cd.yml`:
 - tests, script syntax checks, config validation and an import check;
