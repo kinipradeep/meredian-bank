@@ -1,0 +1,14 @@
+# Changelog
+
+## 2026-11-26
+- **MeriDrive:** 30 fictional bank files (PDF, Word, email, CSV, JSON, YAML) with poisoned documents.
+  - New file, payment and screening tools.
+  - New agents: Ledger (accounts payable), Hira (HR screening) and the Ops copilot; Aria can now read the customer's own documents.
+  - Four new challenges, plus admin pages for the drive, vendor payments and screenings.
+- **Admin account at install:** password sign-in for admins, **My account** page, `app.cli create-admin`, login lockout.
+- **No-Docker deployment:** `install.sh` installs and deploys natively (systemd, apt Postgres and Caddy, Python virtualenvs) in one `curl | bash` command. GitHub Actions deploys over SSH.
+- **Open-source agent stack:**
+  - LangGraph runtime, LiteLLM gateway, Langfuse tracing, LLM Guard scanners;
+  - MCP support: a poisoned partner server with rug pull, and the bank's own MCP endpoint;
+  - admin pages for each.
+- **First release:** the Meridian Bank site, RAG assistant and refund agent (vulnerable and hardened), the X-ray panel, the admin portal and the vector-database lab.

@@ -16,6 +16,8 @@ A self-hosted training range for AI vulnerabilities, built from open-source comp
 ```
 No Docker: everything is installed natively on one Ubuntu 24.04 VM, with Python virtualenvs and systemd services.
 
+**Docs:** [Trainer guide](docs/TRAINER_GUIDE.md) (session plan and solutions) · [Learner guide](docs/LEARNER_GUIDE.md) · [Architecture](docs/ARCHITECTURE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Security policy](SECURITY.md) · [Changelog](CHANGELOG.md)
+
 ## Open-source components
 
 | Component | Role | Managed in the admin portal |
