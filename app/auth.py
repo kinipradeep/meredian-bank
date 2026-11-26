@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 from .config import get_settings
 from .db import get_db
 from .models import AuditLog, User
-from .security import verify_csrf
+from .security import (hash_password, login_failed, login_locked, login_succeeded, verify_csrf,
+                       verify_password)
 from .seed.seed import provision_customer
 from .web import templates
 
@@ -83,6 +84,36 @@ def login_page(request: Request, error: str = ""):
     s = get_settings()
     return templates.TemplateResponse(request, "login.html", {
         "google_enabled": bool(s.google_client_id), "dev_login": s.dev_login_enabled, "error": error})
+
+
+_DUMMY_HASH = hash_password("timing-equaliser-not-a-real-password")
+
+
+@router.post("/auth/password")
+def password_login(request: Request, email: str = Form(...), password: str = Form(...), csrf: str = Form(""),
+                   db: Session = Depends(get_db)):
+    """Local sign-in for admin accounts created at install time (works before Google is configured)."""
+    verify_csrf(request, csrf)
+    email = email.lower().strip()
+    key = f"{request.client.host if request.client else '?'}|{email}"
+    if login_locked(key):
+        return RedirectResponse("/login?error=Too+many+attempts.+Try+again+in+15+minutes.", status_code=303)
+    user = db.query(User).filter_by(email=email).first()
+    ok = verify_password(password, user.password_hash if user and user.password_hash else _DUMMY_HASH)
+    if not (ok and user and user.password_hash and user.is_active):
+        login_failed(key)
+        db.add(AuditLog(user_id=user.id if user else None, event="login_failed", summary=f"password sign-in failed for {email}"))
+        db.commit()
+        return RedirectResponse("/login?error=Wrong+email+or+password", status_code=303)
+    login_succeeded(key)
+    user.last_login = datetime.now(timezone.utc)
+    db.commit()
+    provision_customer(db, user)
+    db.add(AuditLog(user_id=user.id, event="login", summary=f"{email} signed in with password"))
+    db.commit()
+    request.session.clear()
+    request.session["uid"] = user.id
+    return RedirectResponse("/admin" if user.is_admin else "/", status_code=303)
 
 
 @router.get("/auth/google")

@@ -70,3 +70,49 @@ def check_rate(user_id: int, per_minute: int = 20) -> None:
     if len(q) >= per_minute:
         raise HTTPException(status_code=429, detail="Slow down: too many messages this minute")
     q.append(t)
+
+
+# ---------------------------------------------------------------- local passwords (admin accounts)
+import hashlib as _hashlib
+import hmac as _hmac
+import os as _os
+import time as _time
+
+_SCRYPT = {"n": 2 ** 15, "r": 8, "p": 1, "maxmem": 64 * 1024 * 1024}
+
+
+def hash_password(password: str) -> str:
+    salt = _os.urandom(16)
+    dk = _hashlib.scrypt(password.encode(), salt=salt, dklen=32, **_SCRYPT)
+    return f"scrypt${_SCRYPT['n']}${salt.hex()}${dk.hex()}"
+
+
+def verify_password(password: str, stored: str) -> bool:
+    try:
+        algo, n, salt, dk = stored.split("$")
+        if algo != "scrypt":
+            return False
+        got = _hashlib.scrypt(password.encode(), salt=bytes.fromhex(salt), dklen=32,
+                              n=int(n), r=_SCRYPT["r"], p=_SCRYPT["p"], maxmem=_SCRYPT["maxmem"])
+        return _hmac.compare_digest(got.hex(), dk)
+    except (ValueError, TypeError):
+        return False
+
+
+_failures: dict[str, list[float]] = {}
+
+
+def login_locked(key: str, limit: int = 5, window: int = 900) -> bool:
+    """True if `key` (ip|email) had `limit` failed password attempts in the last `window` seconds."""
+    now = _time.time()
+    recent = [t for t in _failures.get(key, []) if now - t < window]
+    _failures[key] = recent
+    return len(recent) >= limit
+
+
+def login_failed(key: str):
+    _failures.setdefault(key, []).append(_time.time())
+
+
+def login_succeeded(key: str):
+    _failures.pop(key, None)

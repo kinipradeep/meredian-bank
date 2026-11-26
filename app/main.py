@@ -11,7 +11,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from . import auth
 from .config import get_settings
-from .db import Base, SessionLocal, engine
+from .db import Base, SessionLocal, engine, migrate
 from .mcp_servers.bank import mcp as bank_mcp
 from .routers import admin, admin_stack, bank, chat
 
@@ -24,6 +24,7 @@ def _startup():
     if settings.is_production and (settings.secret_key == "change-me" or settings.dev_login_enabled):
         raise RuntimeError("Refusing to start: set SECRET_KEY and disable DEV_LOGIN_ENABLED in production.")
     Base.metadata.create_all(bind=engine)
+    migrate()
     from .seed.seed import seed_all
     for attempt in range(30):  # Chroma may still be starting
         db = SessionLocal()

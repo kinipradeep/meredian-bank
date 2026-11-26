@@ -117,3 +117,17 @@ def test_graph_compiles_with_expected_nodes():
     from app.agents.runner import GRAPH_NODES, graph_mermaid
     m = graph_mermaid()
     assert all(n in m for n in GRAPH_NODES)
+
+
+def test_password_hashing_and_lockout():
+    from app.security import hash_password, login_failed, login_locked, login_succeeded, verify_password
+    h = hash_password("Correct-Horse-Battery-9")
+    assert h.startswith("scrypt$") and verify_password("Correct-Horse-Battery-9", h)
+    assert not verify_password("wrong", h) and not verify_password("x", "garbage")
+    assert hash_password("same") != hash_password("same")        # salted
+    key = "1.2.3.4|t@example.com"
+    for _ in range(5):
+        login_failed(key)
+    assert login_locked(key)
+    login_succeeded(key)
+    assert not login_locked(key)

@@ -53,7 +53,8 @@ Create an Ubuntu 24.04 Linode. Add A records for `range.example.com` and `gatewa
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kinipradeep/meredian-bank/main/scripts/install.sh \
   | bash -s -- range.example.com you@example.com
-#   options: --google-id ID --google-secret SECRET   --no-llm-guard   --with-ollama   --repo URL --branch NAME
+#   options: --admin-password PASS   --google-id ID --google-secret SECRET   --no-llm-guard   --with-ollama
+#            --repo URL --branch NAME
 ```
 `install.sh` sets up the VM and **deploys the code from GitHub**:
 1. installs Postgres 16, Caddy, Python 3.12, a firewall (22/80/443), fail2ban, unattended upgrades and swap;
@@ -62,7 +63,13 @@ curl -fsSL https://raw.githubusercontent.com/kinipradeep/meredian-bank/main/scri
 4. builds three virtualenvs (app + Chroma, LiteLLM, LLM Guard) and starts these systemd services:
    `airange-app`, `airange-chroma`, `airange-litellm`, `airange-llm-guard`, `airange-mcp-demo`;
 5. configures Caddy for `range.example.com` and `gateway.range.example.com`, sets up nightly backups and waits for the app to report healthy;
-6. prints your logins and the optional GitHub Actions secrets.
+6. **creates the admin account** for the email you passed: it uses `--admin-password` if given, otherwise it generates a password (shown once, never stored);
+7. prints the admin login, the other logins and the optional GitHub Actions secrets.
+
+**Admin account.** Sign in at `https://range.example.com/login` → *Administrator sign-in*. This works before Google sign-in is set up. The same email also gets admin rights when it signs in with Google. Under **Admin → My account** you can change your password and create more password admins. Re-running the installer keeps the existing password unless you pass `--admin-password`. Five wrong attempts lock that email from that IP for 15 minutes. If you forget the password, reset it on the VM:
+```bash
+sudo -u airange bash -c 'cd /opt/airange && set -a && . ./.env && .venv/bin/python -m app.cli create-admin --email you@example.com'
+```
 
 **To update, run the same command again.** It pulls the latest `main` from GitHub, reinstalls and restarts everything, and keeps your `.env` and data. (If you ever make the repo private, pass an SSH `--repo git@github.com:...` URL; the script then prints a read-only deploy key to add on GitHub.)
 
@@ -94,7 +101,7 @@ Go to **Admin → LLM gateway → Add a model**. For example:
 
 | Where | Login |
 |---|---|
-| Range and admin portal | Google (emails in `ADMIN_EMAILS` become admins) |
+| Range and admin portal | Admin: email + password from the installer (*Administrator sign-in*). Learners: Google |
 | `gateway.<domain>/ui` | `LITELLM_UI_USERNAME` / `LITELLM_UI_PASSWORD` from `.env` |
 | Langfuse Cloud | your Langfuse account |
 
@@ -133,7 +140,7 @@ DATABASE_URL=postgresql+psycopg://user:pass@127.0.0.1:5432/airange DEV_LOGIN_ENA
 
 ## Security notes
 - The **bank** is deliberately vulnerable; the **platform** is not. Platform controls:
-  - Google OAuth with verified email and an optional domain allowlist; secure, HttpOnly session cookies; CSRF tokens on every form
+  - Google OAuth with verified email and an optional domain allowlist; local admin passwords hashed with scrypt and protected by a login lockout; secure, HttpOnly session cookies; CSRF tokens on every form
   - a strict CSP, encrypted secrets (Fernet in the app, salt key in LiteLLM), admin-only routes and an audit log of every admin action
   - Postgres, Chroma, LLM Guard and the MCP demo server listen on 127.0.0.1 only, and systemd hardening (`NoNewPrivileges`, `ProtectSystem`) applies to every service
 - `send_email` never sends anything: it writes to the Outbox table. Seed "secrets" are fake. Never load real data.

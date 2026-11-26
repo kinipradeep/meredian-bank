@@ -393,3 +393,63 @@ def new_mcp_token() -> str:
 
 
 __all__ = ["router", "new_mcp_token", "asyncio"]
+
+
+# ---------------------------------------------------------------- my account (local admin password)
+
+@router.get("/account")
+def account(request: Request, db: Session = Depends(get_db), user: User = Depends(require_admin)):
+    admins = db.query(User).filter(User.role == "admin").order_by(User.email).all()
+    return render(request, "account.html", user, admins=admins)
+
+
+@router.post("/account/password")
+def account_password(request: Request, current: str = Form(""), new: str = Form(...), confirm: str = Form(...),
+                     csrf: str = Form(""), db: Session = Depends(get_db), user: User = Depends(require_admin)):
+    from ..security import hash_password, verify_password
+    verify_csrf(request, csrf)
+    if user.password_hash and not verify_password(current, user.password_hash):
+        flash(request, "Current password is wrong.", "error")
+    elif new != confirm:
+        flash(request, "The new passwords don't match.", "error")
+    elif len(new) < 12:
+        flash(request, "Use at least 12 characters.", "error")
+    else:
+        user.password_hash = hash_password(new)
+        db.commit()
+        audit(db, user, "Changed own admin password")
+        flash(request, "Password updated.")
+    return back("/admin/account")
+
+
+@router.post("/account/admins")
+def account_add_admin(request: Request, email: str = Form(...), csrf: str = Form(""), db: Session = Depends(get_db),
+                      user: User = Depends(require_admin)):
+    """Create another local admin with a one-time generated password."""
+    from ..cli import _generate
+    from ..security import hash_password
+    verify_csrf(request, csrf)
+    email = email.lower().strip()
+    other = db.query(User).filter_by(email=email).first() or User(email=email, name=email.split("@")[0])
+    pw = _generate()
+    other.role, other.is_active, other.password_hash = "admin", True, hash_password(pw)
+    db.add(other)
+    db.commit()
+    audit(db, user, f"Set a local admin password for {email}")
+    flash(request, f"Admin {email} can sign in with password: {pw}  (shown once; they should change it under My account).")
+    return back("/admin/account")
+
+
+@router.post("/account/admins/{uid}/remove-password")
+def account_remove_password(uid: int, request: Request, csrf: str = Form(""), db: Session = Depends(get_db),
+                            user: User = Depends(require_admin)):
+    verify_csrf(request, csrf)
+    other = db.get(User, uid)
+    if other.id == user.id:
+        flash(request, "You can't remove your own password here.", "error")
+    else:
+        other.password_hash = ""
+        db.commit()
+        audit(db, user, f"Removed local password for {other.email}")
+        flash(request, f"{other.email} can now only sign in with Google.")
+    return back("/admin/account")

@@ -6,6 +6,8 @@
 #     | bash -s -- range.example.com you@example.com
 #
 # Options (after the email):
+#   --admin-password PASS                   password for the admin account <admin-email> (12+ chars);
+#                                           omitted: one is generated on first install and printed at the end
 #   --google-id ID --google-secret SECRET   Google OAuth client (can also be added to .env later)
 #   --no-llm-guard                          skip LLM Guard (fits a 4 GB VM)
 #   --with-ollama                           also install Ollama for local open-weights models
@@ -18,17 +20,18 @@ set -euo pipefail
 
 # Everything runs inside main() so `curl ... | bash` reads the whole script before executing it.
 main() {
-USAGE="usage: install.sh <domain> <admin-email> [--google-id ID --google-secret S] [--no-llm-guard] [--with-ollama] [--repo URL] [--branch B]"
+USAGE="usage: install.sh <domain> <admin-email> [--admin-password P] [--google-id ID --google-secret S] [--no-llm-guard] [--with-ollama] [--repo URL] [--branch B]"
 DOMAIN="${1:?$USAGE}"
 EMAIL="${2:?$USAGE}"
 shift 2
 REPO="https://github.com/kinipradeep/meredian-bank.git"
 BRANCH=main
-WITH_GUARD=1; WITH_OLLAMA=0; GOOGLE_ID=""; GOOGLE_SECRET=""
+WITH_GUARD=1; WITH_OLLAMA=0; GOOGLE_ID=""; GOOGLE_SECRET=""; ADMIN_PW=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --no-llm-guard) WITH_GUARD=0 ;;
     --with-ollama) WITH_OLLAMA=1 ;;
+    --admin-password) ADMIN_PW="${2:?}"; shift ;;
     --google-id) GOOGLE_ID="${2:?}"; shift ;;
     --google-secret) GOOGLE_SECRET="${2:?}"; shift ;;
     --repo) REPO="${2:?}"; shift ;;
@@ -43,6 +46,7 @@ DATA=/var/lib/airange
 LITELLM_VERSION=1.111.0
 LLM_GUARD_REF=168c103            # protectai/llm-guard: final release (0.3.16; the project is archived)
 [ "$(id -u)" = 0 ] || { echo "Run as root."; exit 1; }
+if [ -n "$ADMIN_PW" ] && [ ${#ADMIN_PW} -lt 12 ]; then echo "--admin-password must be at least 12 characters."; exit 1; fi
 step() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 as_app() { sudo -u airange -H "$@"; }
 
@@ -170,11 +174,27 @@ step "Waiting for the app"
 for _ in $(seq 1 60); do curl -fs http://127.0.0.1:8080/healthz >/dev/null && break; sleep 3; done
 curl -fs http://127.0.0.1:8080/healthz >/dev/null && echo "App is up." || { echo "App not healthy yet: journalctl -u airange-app -n 50"; }
 
+step "Admin account: $EMAIL"
+ADMIN_OUT=$(sudo -u airange -H env ADMIN_PASSWORD="$ADMIN_PW" bash -c \
+  "cd $APP && set -a && . ./.env && set +a && .venv/bin/python -m app.cli create-admin --email '$EMAIL' --name Administrator --keep-existing" 2>&1) \
+  || { echo "$ADMIN_OUT"; echo "Could not create the admin account (see above)."; }
+echo "$ADMIN_OUT" | grep -v '^Password:' || true
+if echo "$ADMIN_OUT" | grep -q '^Password:'; then ADMIN_LINE="$(echo "$ADMIN_OUT" | grep '^Password:' | cut -d' ' -f2-)  (generated: save it now, it is not stored anywhere)"
+elif [ -n "$ADMIN_PW" ]; then ADMIN_LINE="the password you passed with --admin-password"
+else ADMIN_LINE="unchanged (re-run with --admin-password to reset)"; fi
+
 IP=$(curl -fs4 ifconfig.me || hostname -I | awk '{print $1}')
 cat <<MSG
 
 ==============================================================================
- Installed. Remaining steps:
+ Installed and deployed: $(sudo -u airange git -C "$APP" log -1 --format='%h %s')
+
+ ADMIN LOGIN   https://$DOMAIN/login  >  Administrator sign-in
+               email:    $EMAIL
+               password: $ADMIN_LINE
+               (the same email also gets admin rights when it signs in with Google)
+
+ Remaining steps:
 
  1. DNS: A records  $DOMAIN  and  gateway.$DOMAIN  ->  $IP
 
@@ -193,8 +213,8 @@ $(cat /home/airange/.ssh/actions_ed25519)
 
 $(ssh-keyscan -q -t ed25519 localhost 2>/dev/null | sed "s/^localhost/$IP/")
 
- 4. Logins:  https://$DOMAIN  (Google; $EMAIL is admin)
-             https://gateway.$DOMAIN/ui   $LITELLM_UI_USERNAME / $LITELLM_UI_PASSWORD
+ 4. Other logins:
+    Gateway: https://gateway.$DOMAIN/ui   $LITELLM_UI_USERNAME / $LITELLM_UI_PASSWORD
     Tracing: create a free project at https://cloud.langfuse.com and paste its keys in
              Admin > Tracing (or LANGFUSE_* in .env).
 
