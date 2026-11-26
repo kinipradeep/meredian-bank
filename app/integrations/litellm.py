@@ -8,7 +8,7 @@ PRESETS = [  # (gateway model name, LiteLLM model string, needs key, api_base)
     ("groq-llama-70b", "groq/llama-3.3-70b-versatile", True, ""),
     ("gemini-flash-lite", "gemini/gemini-3.1-flash-lite", True, ""),
     ("openai-model", "openai/<model-name>", True, ""),
-    ("ollama-llama3", "ollama_chat/llama3.2:3b", False, "http://ollama:11434"),
+    ("ollama-llama3", "ollama_chat/llama3.2:3b", False, "http://127.0.0.1:11434"),
 ]
 
 

@@ -33,10 +33,12 @@ def flush(cfg: dict):
 
 
 def trace_url(cfg: dict, trace_id: str | None) -> str:
-    base = (cfg.get("public_url") or "").rstrip("/")
+    base = (cfg.get("public_url") or cfg.get("host") or "").rstrip("/")
     if not (base and trace_id):
         return ""
-    return f"{base}/project/{cfg.get('project_id', '')}/traces/{trace_id}"
+    if cfg.get("project_id"):
+        return f"{base}/project/{cfg['project_id']}/traces/{trace_id}"
+    return f"{base}/trace/{trace_id}"
 
 
 def _api(cfg: dict, path: str, **params):

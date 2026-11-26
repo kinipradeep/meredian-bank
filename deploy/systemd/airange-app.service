@@ -1,0 +1,19 @@
+[Unit]
+Description=AI Security Range - web app, LangGraph agents, admin portal, bank MCP endpoint
+After=network.target postgresql.service airange-chroma.service airange-mcp-demo.service
+Wants=postgresql.service airange-chroma.service airange-mcp-demo.service
+
+[Service]
+User=airange
+Group=airange
+WorkingDirectory=/opt/airange
+EnvironmentFile=/opt/airange/.env
+ExecStart=/opt/airange/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8080 --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/airange
+
+[Install]
+WantedBy=multi-user.target

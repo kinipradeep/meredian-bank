@@ -23,12 +23,14 @@ jobs:
         run: pip install -r requirements.txt -r requirements-dev.txt
       - name: Unit tests
         run: pytest -q
-      - name: Validate docker compose (all profiles)
+      - name: Check deployment scripts and config
         run: |
+          for f in scripts/*.sh; do bash -n "$f"; done
           scripts/gen-env.sh ci.example.com ci@example.com
-          docker compose --profile observability --profile guard --profile ollama config --quiet
-      - name: Build image
-        run: docker build -t airange-app:ci .
+          python -c "import yaml; [yaml.safe_load(open(f)) for f in ('deploy/litellm/config.yaml','deploy/llm-guard/scanners.yml')]"
+          for u in deploy/systemd/*.service; do grep -q '^ExecStart=' "$u"; done
+      - name: Import check (app starts without services)
+        run: python -c "import app.main"
 
   deploy:
     needs: test
@@ -52,11 +54,10 @@ jobs:
           VM_PORT: ${{ secrets.VM_PORT }}
           VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
           VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
-          APP_DIR: ${{ vars.APP_DIR || '/opt/airange' }}
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
           if [ -n "$VM_KNOWN_HOSTS" ]; then printf '%s\n' "$VM_KNOWN_HOSTS" > ~/.ssh/known_hosts
           else ssh-keyscan -p "${VM_PORT:-22}" "$VM_HOST" > ~/.ssh/known_hosts; fi
-          ssh -i ~/.ssh/deploy_key -p "${VM_PORT:-22}" "${VM_USER:-deploy}@$VM_HOST" \
-            "APP_DIR='$APP_DIR' SHA='${{ github.sha }}' bash -s" < scripts/deploy.sh
+          ssh -i ~/.ssh/deploy_key -p "${VM_PORT:-22}" "${VM_USER:-airange}@$VM_HOST" \
+            "SHA='${{ github.sha }}' bash -s" < scripts/deploy.sh

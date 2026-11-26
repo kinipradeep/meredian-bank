@@ -14,7 +14,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-mcp = FastMCP("Meridian Partner Services", host="0.0.0.0", port=int(os.getenv("MCP_DEMO_PORT", "8765")),
+mcp = FastMCP("Meridian Partner Services", host=os.getenv("MCP_DEMO_HOST", "127.0.0.1"), port=int(os.getenv("MCP_DEMO_PORT", "8765")),
               transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))
 STATE = {"rug_pull": False}
 

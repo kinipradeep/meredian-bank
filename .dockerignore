@@ -1,6 +1,0 @@
-.env
-backups
-__pycache__
-.git
-.github
-.venv

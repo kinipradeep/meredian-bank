@@ -1,0 +1,20 @@
+[Unit]
+Description=AI Security Range - LLM Guard API (Protect AI)
+After=network.target
+
+[Service]
+User=airange
+Group=airange
+WorkingDirectory=/opt/llm-guard/src/llm_guard_api
+EnvironmentFile=/opt/airange/.env
+Environment=CONFIG_FILE=/opt/airange/deploy/llm-guard/scanners.yml HF_HOME=/var/lib/airange/hf HOME=/var/lib/airange LOG_LEVEL=INFO
+ExecStart=/bin/sh -c 'AUTH_TOKEN="$LLMGUARD_TOKEN" exec /opt/llm-guard/venv/bin/uvicorn app.app:create_app --factory --host 127.0.0.1 --port 8001 --workers 1'
+Restart=always
+RestartSec=5
+TimeoutStartSec=300
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/airange
+
+[Install]
+WantedBy=multi-user.target

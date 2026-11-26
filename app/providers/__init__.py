@@ -19,8 +19,8 @@ DEFAULT_PROVIDERS = [
      "notes": "Add provider keys and models under Admin > LLM gateway. Model names here are the gateway's "
               "model names. Leave URL and key blank to use the gateway settings, or paste a virtual key."},
     {"slug": "ollama-direct", "name": "Ollama (direct, optional)", "kind": "openai_compat",
-     "base_url": "http://ollama:11434/v1", "default_model": "llama3.2:3b", "models_hint": "llama3.2:3b",
-     "enabled": False, "notes": "Only if you run the optional ollama service and want to bypass the gateway."},
+     "base_url": "http://127.0.0.1:11434/v1", "default_model": "llama3.2:3b", "models_hint": "llama3.2:3b",
+     "enabled": False, "notes": "Only if you installed Ollama on the VM (scripts/install.sh --with-ollama) and want to bypass the gateway."},
 ]
 
 

@@ -9,7 +9,7 @@
 {% for t in traces %}<tr><td class="nowrap"><small>{{ t.time }}</small></td><td class="mono"><small>{{ t.name }}</small></td><td><small>{{ t.user }}</small></td>
 <td>{% for g in t.tags %}<span class="tag">{{ g }}</span> {% endfor %}</td><td class="r">{{ '%.1f'|format(t.latency or 0) }}s</td><td class="r">{% if t.cost %}${{ '%.5f'|format(t.cost) }}{% endif %}</td>
 <td>{% if t.url %}<a class="btn small ghost" href="{{ t.url }}" target="_blank" rel="noopener">Open ↗</a>{% endif %}</td></tr>
-{% else %}<tr><td colspan="7" class="muted">{{ 'No traces yet.' if up else 'Langfuse is not reachable. Start it with: docker compose --profile observability up -d' }}</td></tr>{% endfor %}</table></section>
+{% else %}<tr><td colspan="7" class="muted">{{ 'No traces yet.' if up else 'Langfuse is not reachable, or the keys are not set. Create a free project at cloud.langfuse.com and paste its keys below.' }}</td></tr>{% endfor %}</table></section>
 <section class="card"><h2>Latest turns recorded by the range</h2>
 <table><tr><th>When</th><th>Agent</th><th>Summary</th><th>Tokens</th><th>Langfuse</th></tr>
 {% for r in local %}<tr><td class="nowrap"><small>{{ r.created_at.strftime('%d %b %H:%M:%S') }}</small></td><td class="mono"><small>{{ agents[r.agent_id].slug if r.agent_id in agents else '' }}</small></td>
@@ -21,5 +21,5 @@
   <label>Project ID <input name="project_id" value="{{ cfg.project_id }}"></label><label>Public key <input name="public_key" value="{{ cfg.public_key }}"></label>
   <label>Secret key {% if secret %}<small class="muted">current: {{ secret }}</small>{% endif %}<input name="secret_key" type="password" autocomplete="off" placeholder="leave blank to keep"></label>
   <div class="actions full"><button class="btn">Save</button></div></form>
-<p class="muted">The docker-compose setup creates the Langfuse project and keys automatically from LANGFUSE_INIT_* in .env, so these fields are pre-filled.</p></section>
+<p class="muted">Use Langfuse Cloud (free Hobby tier): create a project, then Settings → API keys. Host: https://cloud.langfuse.com (EU) or https://us.cloud.langfuse.com (US). Project ID is the part after /project/ in its URL. Traces contain learner prompts: fictional data only.</p></section>
 {% endblock %}

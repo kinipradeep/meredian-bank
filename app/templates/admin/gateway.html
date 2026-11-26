@@ -11,7 +11,7 @@
 <td><small>{% if m.input_cost %}${{ '%.2f'|format(m.input_cost*1e6) }} · ${{ '%.2f'|format((m.output_cost or 0)*1e6) }}{% endif %}</small></td>
 <td class="nowrap"><form method="post" action="/admin/gateway/test" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="model" value="{{ m.name }}"><button class="btn small ghost">Test</button></form>
 {% if m.db_model and m.id %}<form method="post" action="/admin/gateway/models/{{ m.id }}/delete" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small danger">Remove</button></form>{% endif %}</td></tr>
-{% else %}<tr><td colspan="5" class="muted">{{ 'No models yet. Add one below.' if up else 'Gateway offline: start the litellm service (docker compose up -d litellm).' }}</td></tr>{% endfor %}</table></section>
+{% else %}<tr><td colspan="5" class="muted">{{ 'No models yet. Add one below.' if up else 'Gateway offline: on the VM run sudo systemctl start airange-litellm (logs: journalctl -u airange-litellm).' }}</td></tr>{% endfor %}</table></section>
 
 <div class="two">
 <section class="card"><h2>Add a model</h2>
@@ -19,7 +19,7 @@
   <label>Name agents will use <input name="name" required placeholder="claude-haiku"></label>
   <label>LiteLLM model string <input name="model" required placeholder="anthropic/claude-haiku-5-5" list="presets"></label>
   <label class="full">Provider API key (stored encrypted in the gateway) <input name="api_key" type="password" autocomplete="off"></label>
-  <label class="full">API base (only for Ollama / self-hosted) <input name="api_base" placeholder="http://ollama:11434"></label>
+  <label class="full">API base (only for Ollama / self-hosted) <input name="api_base" placeholder="http://127.0.0.1:11434"></label>
   <div class="actions full"><button class="btn">Add to gateway</button></div></form>
 <datalist id="presets">{% for n, m, k, b in presets %}<option value="{{ m }}">{{ n }}</option>{% endfor %}</datalist>
 <table><tr><th>Suggested name</th><th>Model string</th></tr>{% for n, m, k, b in presets %}<tr><td class="mono">{{ n }}</td><td class="mono"><small>{{ m }}{% if b %} · base {{ b }}{% endif %}</small></td></tr>{% endfor %}</table></section>
@@ -45,7 +45,7 @@
 
 <section class="card"><h2>Connection</h2>
 <form method="post" action="/admin/gateway/settings" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
-  <label>Internal URL <input name="url" value="{{ cfg.url }}"></label><label>Public URL (for the LiteLLM UI link) <input name="public_url" value="{{ cfg.public_url }}" placeholder="https://gateway.example.com"></label>
+  <label>Internal URL <input name="url" value="{{ cfg.url }}"></label><label>Public URL (for the LiteLLM UI link) <input name="public_url" value="{{ cfg.public_url }}" placeholder="https://gateway.example.com (optional)"></label>
   <label>Master key {% if master %}<small class="muted">current: {{ master }}</small>{% endif %}<input name="master_key" type="password" autocomplete="off" placeholder="leave blank to keep"></label>
   <div class="actions full"><button class="btn">Save</button></div></form></section>
 {% endblock %}

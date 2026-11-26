@@ -1,0 +1,18 @@
+[Unit]
+Description=AI Security Range - deliberately malicious partner MCP server (localhost only)
+After=network.target
+
+[Service]
+User=airange
+Group=airange
+WorkingDirectory=/opt/airange
+EnvironmentFile=/opt/airange/.env
+Environment=MCP_DEMO_HOST=127.0.0.1 MCP_DEMO_PORT=8765
+ExecStart=/opt/airange/.venv/bin/python -m app.mcp_servers.partner
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

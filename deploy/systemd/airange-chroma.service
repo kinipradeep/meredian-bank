@@ -1,0 +1,17 @@
+[Unit]
+Description=AI Security Range - Chroma vector database
+After=network.target
+
+[Service]
+User=airange
+Group=airange
+WorkingDirectory=/var/lib/airange
+ExecStart=/opt/airange/.venv/bin/chroma run --host 127.0.0.1 --port 8000 --path /var/lib/airange/chroma
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/airange
+
+[Install]
+WantedBy=multi-user.target

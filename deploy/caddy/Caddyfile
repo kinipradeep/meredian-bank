@@ -1,0 +1,15 @@
+# Installed to /etc/caddy/Caddyfile by scripts/install.sh. DOMAIN comes from /etc/caddy/airange.env.
+
+# Meridian Bank range, admin portal and the bank's MCP endpoint (/mcp/)
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy 127.0.0.1:8080
+	header Strict-Transport-Security "max-age=31536000"
+}
+
+# LiteLLM gateway UI and API (login: LITELLM_UI_USERNAME / LITELLM_UI_PASSWORD; API needs a key).
+# Delete this block if you don't want the gateway reachable from the internet.
+gateway.{$DOMAIN} {
+	encode gzip
+	reverse_proxy 127.0.0.1:4000
+}

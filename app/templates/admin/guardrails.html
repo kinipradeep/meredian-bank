@@ -19,7 +19,7 @@
 <div class="two"><div><h3>Input</h3>{% for s in input_scanners %}<label class="check"><input type="checkbox" name="in_{{ s }}" {{ '' if s in (cfg.suppress_input or []) else 'checked' }}> <span class="mono">{{ s }}</span></label>{% endfor %}</div>
 <div><h3>Output</h3>{% for s in output_scanners %}<label class="check"><input type="checkbox" name="out_{{ s }}" {{ '' if s in (cfg.suppress_output or []) else 'checked' }}> <span class="mono">{{ s }}</span></label>{% endfor %}</div></div>
 <div class="actions"><button class="btn small">Save scanner selection</button></div></form>
-<p class="muted">Thresholds and patterns live in <span class="mono">deploy/llm-guard/scanners.yml</span> on the server.</p>
+<p class="muted">Thresholds and patterns live in <span class="mono">deploy/llm-guard/scanners.yml</span> on the server (restart: sudo systemctl restart airange-llm-guard).</p>
 <h2>Service</h2>
 <form method="post" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
   <label class="check full"><input type="checkbox" name="enabled" {{ 'checked' if cfg.enabled }}> LLM Guard enabled</label>
