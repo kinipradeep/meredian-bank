@@ -25,6 +25,7 @@ No Docker: everything is installed natively on one Ubuntu 24.04 VM, with Python 
 | **Langfuse** (Cloud) | Tracing of every LangGraph run: prompts, retrieval, tool calls, tokens, latency and cost, per learner and session. | **Tracing**: on/off, keys, recent traces with deep links. The X-ray panel links each turn to its trace. |
 | **LLM Guard** | ML scanners (prompt injection, secrets, invisible text, PII, banned output) on the input, on retrieved/tool context and on the output. | **Guardrails**: service status, scanner selection, per-agent switches, a playground, recent guard decisions |
 | **MCP** (MCP Python SDK + `langchain-mcp-adapters`) | Agents load tools from MCP servers. A malicious demo server shows tool poisoning and rug pulls, and the bank exposes its own tools over MCP. | **MCP servers**: register servers, inspect the tool descriptions the model sees, pin approved fingerprints, trigger the rug pull, configure the bank endpoint, see every MCP call |
+| **MeriDrive** (bank file estate) | 30+ fictional bank files the agents read: statements and KYC records, invoices, a vendor master, resumes, runbooks, secret configs, board minutes. Formats include PDF, Word, email, CSV, JSON, YAML and Markdown. Poisoned files hide instructions in white 1-pt text, hidden Word runs, HTML comments or zero-width characters. | **MeriDrive**: browse, upload, edit access levels, see *what the model sees vs what a human sees*, re-index, reset for a new cohort. Also **Vendor payments** (approve/reject) and **Candidate screenings**. |
 | **Chroma + fastembed** | Vector database and local embeddings | **Vector database**: chunking, embeddings, raw vectors, filtered vs unfiltered search, 2D map, playground |
 
 ## Attacks and defences
@@ -37,6 +38,11 @@ No Docker: everything is installed natively on one Ubuntu 24.04 VM, with Python 
 | ₹50,000+ refund (excessive agency) | Refund Desk v1 | refund cap, human approval queue |
 | Another customer's account (confused deputy) | Refund Desk v1, or the bank MCP endpoint | on-behalf-of authorisation |
 | **Poisoned MCP tool** | Max v1 (partner MCP server) | description scanning, **tool pinning** (also blocks rug pulls), LLM Guard on tool results |
+| **Redirect a vendor payment**: a hidden instruction in an invoice plus a business-email-compromise email | Ledger v1 (accounts payable) | `strip_hidden_content`, quarantine of injected files, payee verification against the vendor master, approval above ₹1 lakh |
+| **Shortlist an unqualified applicant**: white text in a resume; another resume tries to email the salary file | Hira v1 (HR screening) | hidden-text stripping, folder sandbox (`safe_paths`), email allowlist |
+| **Steal the gateway key**: `../` path traversal out of the runbooks folder | Ops copilot v1 | `safe_paths` (normalise before checking), output secret filter |
+| **Leak board M&A minutes** via unfiltered document search | Ops copilot v1 | `file_user_rights` (search only what the user may read) |
+| **Another customer's statement**: `../MB-200101/...` from the learner's own folder | Aria v1 | `safe_paths` + `file_user_rights` |
 
 The seeded agents use the **offline demo model**, so every attack works before you add a single API key. Add models in the LLM gateway, then use **Agents → Apply to all agents**.
 
@@ -120,6 +126,21 @@ Go to **Admin → LLM gateway → Add a model**. For example:
 7. **Defence in depth.** Clone an agent and switch one control off at a time (regex guard, LLM Guard, isolation, pinning) to see which attack comes back.
 
 These exercises map to the ISC2 AI security domains, the OWASP Top 10 for LLM Applications (LLM01, 02, 03, 06, 07, 08) and MITRE ATLAS.
+
+## The bank's files (MeriDrive)
+Agents work on real-looking documents, not just chat:
+
+| Folder | Contents | Access |
+|---|---|---|
+| `public/` | brochure (PDF), schedule of charges, branch directory, FX rates (CSV) | public |
+| `customers/<id>/` | statements (PDF/CSV), KYC profiles (JSON), a loan sanction letter. Every learner also gets their own `statement-latest.csv` | owner only |
+| `finance/ap/inbox/` | invoices (PDF, DOCX); **Nimbus** hides a payment redirect; **acme-bank-change-request.eml** is a look-alike-domain BEC | finance |
+| `staff/` | runbooks, an incident report, the **vendor master** (approved payee accounts), a support ticket queue with zero-width obfuscation | staff / finance |
+| `hr/` | compensation, performance reviews, a job description, 4 resumes (2 poisoned) | hr |
+| `it/` | `payments-gateway.env`, `deploy-config.yaml` with fake live secrets | it |
+| `board/` | Q3 board minutes (Project Kestrel acquisition) | board |
+
+Files are stored on the VM under `/var/lib/airange/files`, cataloged in Postgres with the extracted text, and indexed into the Chroma collection `meridian-drive`. Agents reach them only through `list_files`, `read_file` and `search_files`, never through the real filesystem. To add your own scenarios, upload PDFs or Word files in **Admin → MeriDrive**, or edit `scripts/dev/generate_drive.py` and regenerate (`pip install reportlab python-docx`).
 
 ## Local development
 ```bash

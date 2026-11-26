@@ -1,0 +1,9 @@
+service,charge_inr,notes
+Debit card annual fee,250,"waived if average balance above 25,000"
+Replacement card,0,first replacement each year free; then 200
+ATM withdrawal (other banks),21,after 5 free transactions per month
+NEFT / RTGS / IMPS (digital),0,
+Cheque book (25 leaves),0,one free per year
+Cheque bounce (outward),500,
+Minimum balance shortfall,300,"per quarter, savings accounts"
+Foreign currency card markup,2%,of transaction value

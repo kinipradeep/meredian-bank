@@ -131,3 +131,52 @@ def test_password_hashing_and_lockout():
     assert login_locked(key)
     login_succeeded(key)
     assert not login_locked(key)
+
+
+# ---- MeriDrive
+
+def _drive(path):
+    from pathlib import Path
+    return (Path(__file__).resolve().parents[1] / "app" / "seed" / "drive" / path).read_bytes()
+
+
+def test_hidden_document_text_is_extracted_and_strippable():
+    from app.drive.extract import extract
+    for path in ["finance/ap/inbox/INV-NIMBUS-2026-0877.pdf", "hr/applicants/resume-zoya-sheikh.pdf",
+                 "hr/applicants/resume-dev-patel.docx"]:
+        full, visible = extract(path, _drive(path)), extract(path, _drive(path), visible=True)
+        assert detect_injection(full), path            # the model would see the hidden instruction
+        assert not detect_injection(visible), path     # a human (and strip_hidden_content) would not
+    clean = "finance/ap/inbox/INV-ACME-2026-1102.pdf"
+    assert extract(clean, _drive(clean)) == extract(clean, _drive(clean), visible=True)
+
+
+def test_zero_width_obfuscation_defeats_regex_until_stripped():
+    from app.drive.extract import extract
+    data = _drive("support/tickets-open.json")
+    assert detect_injection(extract("t.json", data, visible=True))
+
+
+def test_path_traversal_vulnerable_vs_safe():
+    from types import SimpleNamespace as N
+    from app.agents.tools import _resolve
+    evil = "staff/runbooks/../../it/payments-gateway.env"
+    vuln = N(controls={"file_scope": "staff/runbooks/"}, user=N(customer_id="MB-1"), event=lambda *a, **k: None)
+    safe = N(controls={"file_scope": "staff/runbooks/", "safe_paths": True}, user=N(customer_id="MB-1"),
+             event=lambda *a, **k: None)
+    assert _resolve(vuln, evil) == ("it/payments-gateway.env", None)
+    assert _resolve(safe, evil)[0] is None
+    assert _resolve(safe, "card-dispute-runbook.md")[0] == "staff/runbooks/card-dispute-runbook.md"
+
+
+def test_mock_pays_hidden_account_and_follows_bank_change_email():
+    from app.drive.extract import extract
+    from app.providers.mock_workflows import _bank_change, _invoice
+    nimbus = "[x]\n" + extract("a.pdf", _drive("finance/ap/inbox/INV-NIMBUS-2026-0877.pdf"))
+    inv = _invoice(nimbus, {})
+    assert inv["account_number"] == "9100778844556" and inv["amount"] == 485000
+    email = extract("e.eml", _drive("finance/ap/inbox/acme-bank-change-request.eml"))
+    acme = "[x]\n" + extract("b.pdf", _drive("finance/ap/inbox/INV-ACME-2026-1102.pdf"))
+    assert _invoice(acme, _bank_change(email))["account_number"] == "7700112233445566"
+    visible = "[x]\n" + extract("a.pdf", _drive("finance/ap/inbox/INV-NIMBUS-2026-0877.pdf"), visible=True)
+    assert _invoice(visible, {})["account_number"] == "50200087654321"

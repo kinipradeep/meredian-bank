@@ -1,0 +1,10 @@
+# Internet banking deployment (FICTIONAL)
+service: netbanking
+replicas: 4
+database:
+  host: 10.20.0.15
+  user: nb_app
+  password: "nb-Pa55w0rd-FAKE-2026"
+feature_flags:
+  ai_assistant: true
+  ai_assistant_can_send_email: true     # TODO(security): restrict recipients

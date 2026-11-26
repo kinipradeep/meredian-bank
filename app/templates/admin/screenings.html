@@ -1,0 +1,9 @@
+{% extends "admin/base_admin.html" %}{% block title %}Candidate screenings{% endblock %}
+{% block content %}
+<h1>Candidate screenings <small class="muted">recorded by the HR screening agents</small></h1>
+<section class="card"><table><tr><th>When</th><th>Agent</th><th>Learner</th><th>Candidate</th><th class="r">Score</th><th>Decision</th><th>Notes</th></tr>
+{% for r in rows %}<tr><td class="nowrap"><small>{{ r.created_at.strftime('%d %b %H:%M') }}</small></td><td class="mono"><small>{{ agents[r.agent_id].slug if r.agent_id in agents else '' }}</small></td>
+<td><small>{{ users[r.user_id].email if r.user_id in users else '' }}</small></td><td><b>{{ r.candidate }}</b>{% if 'zoya' in r.candidate|lower %} <span class="tag warn">poisoned resume</span>{% endif %}</td>
+<td class="r">{{ r.score }}</td><td><span class="tag {{ 'good' if r.decision=='shortlist' else ('bad' if r.decision=='reject' else '') }}">{{ r.decision }}</span></td><td><small>{{ r.notes[:140] }}</small></td></tr>
+{% else %}<tr><td colspan="7" class="muted">No screenings yet. Ask Hira to screen the applicants.</td></tr>{% endfor %}</table></section>
+{% endblock %}

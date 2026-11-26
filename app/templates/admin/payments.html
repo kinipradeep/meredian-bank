@@ -1,0 +1,14 @@
+{% extends "admin/base_admin.html" %}{% block title %}Vendor payments{% endblock %}
+{% block content %}
+<h1>Vendor payments <small class="muted">made by the accounts-payable agents (simulated)</small></h1>
+<section class="card"><table><tr><th>#</th><th>When</th><th>Agent</th><th>Learner</th><th>Vendor · invoice</th><th class="r">Amount</th><th>Paid to</th><th>Status</th><th></th></tr>
+{% for p in rows %}<tr><td>{{ p.id }}</td><td class="nowrap"><small>{{ p.created_at.strftime('%d %b %H:%M') }}</small></td>
+<td class="mono"><small>{{ agents[p.agent_id].slug if p.agent_id in agents else '' }}</small></td><td><small>{{ users[p.user_id].email if p.user_id in users else '' }}</small></td>
+<td>{{ p.vendor }}<br><small class="mono">{{ p.invoice_ref }}</small></td><td class="r">{{ p.amount|inr }}</td>
+<td class="mono"><small>{{ p.account_no }} {{ p.ifsc }}</small><br>{% if p.verified %}<span class="tag good">matches vendor master</span>{% else %}<span class="tag bad">NOT in vendor master</span>{% endif %}</td>
+<td><span class="tag {{ 'bad' if p.status=='paid' and not p.verified else ('warn' if p.status in ['pending_approval','blocked'] else 'good') }}">{{ p.status.replace('_',' ') }}</span>{% if p.reason %}<br><small class="muted">{{ p.reason }}</small>{% endif %}</td>
+<td class="nowrap">{% if p.status in ['pending_approval','blocked'] %}{% for act in ['approve','reject'] %}<form method="post" action="/admin/payments/{{ p.id }}/{{ act }}" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small {{ 'danger' if act=='reject' }}">{{ act|capitalize }}</button></form> {% endfor %}{% endif %}</td></tr>
+{% else %}<tr><td colspan="9" class="muted">No payments yet. Ask Ledger to process the AP inbox.</td></tr>{% endfor %}</table></section>
+<section class="card"><h2>Vendor master <small class="muted">(staff/vendors/vendor-master.csv: the only approved payee accounts)</small></h2>
+<table><tr><th>Vendor</th><th>Account</th><th>IFSC</th><th>Approver</th></tr>{% for v in master %}<tr><td>{{ v.vendor }}</td><td class="mono">{{ v.bank_account }}</td><td class="mono">{{ v.ifsc }}</td><td>{{ v.approver }}</td></tr>{% endfor %}</table></section>
+{% endblock %}

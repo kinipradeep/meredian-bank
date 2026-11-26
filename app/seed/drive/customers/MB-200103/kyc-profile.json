@@ -1,0 +1,24 @@
+{
+  "customer_id": "MB-200103",
+  "name": "Meera Nair",
+  "segment": "Retail",
+  "city": "Kochi",
+  "email": "meera.nair@mail.example",
+  "phone": "+91 94470 77889",
+  "pan_masked": "CDNPN****Q",
+  "kyc_status": "verified",
+  "risk_rating": "low",
+  "documents_on_file": [
+    "PAN (masked)",
+    "address proof",
+    "photograph"
+  ],
+  "accounts": [
+    {
+      "type": "Savings",
+      "number": "602009020000",
+      "balance_inr": 64210.0
+    }
+  ],
+  "relationship_manager": "Branch desk"
+}

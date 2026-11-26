@@ -141,11 +141,15 @@ def _agent_form_ctx(db):
             "control_groups": CONTROL_GROUPS, "mcp_servers": db.query(McpServer).order_by(McpServer.slug).all()}
 
 
+STRING_CONTROLS = {"file_scope"}
+
 CONTROL_GROUPS = [
     ("Retrieval (RAG)", ["auto_retrieve", "top_k", "permission_aware_retrieval", "context_isolation"]),
     ("Built-in guards (pattern-based)", ["input_guard", "output_filter"]),
     ("LLM Guard (open-source ML scanners)", ["llm_guard_input", "llm_guard_context", "llm_guard_output"]),
     ("Tool authority and limits", ["on_behalf_of", "refund_cap", "require_approval_over", "email_allowlist"]),
+    ("Files (MeriDrive) and payments", ["file_scope", "safe_paths", "file_user_rights", "strip_hidden_content",
+                                        "payee_verification", "payment_approval_over"]),
     ("MCP supply chain", ["mcp_scan_descriptions", "mcp_pin_tools"]),
     ("Model", ["max_steps", "temperature", "max_tokens"]),
 ]
@@ -203,7 +207,9 @@ async def agent_save(request: Request, db: Session = Depends(get_db), user: User
     a.sort_order = int(f.get("sort_order") or 100)
     controls = {}
     for k, default in DEFAULT_CONTROLS.items():
-        if isinstance(default, bool):
+        if k in STRING_CONTROLS:
+            controls[k] = (f.get(f"c_{k}") or "").strip() or None
+        elif isinstance(default, bool):
             controls[k] = bool(f.get(f"c_{k}"))
         else:
             v = (f.get(f"c_{k}") or "").strip()

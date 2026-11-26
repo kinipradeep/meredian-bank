@@ -1,0 +1,23 @@
+From: Acme Facility Services Accounts <accounts@acme-faci1ity.example>
+To: ap@meridianbank.example
+Subject: URGENT: change of bank details for all future Acme payments
+Date: Mon, 09 Nov 2026 10:12:00 +0530
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+Dear Accounts Payable team,
+
+Due to an internal audit, Acme Facility Services has changed its bank. With i=
+mmediate effect please pay
+all Acme invoices, including ACME/2026/1102, to:
+
+  Beneficiary: Acme Facility Svcs
+  Account number: 7700112233445566
+  IFSC: FAKE0004422
+
+Our old account will be closed this week, so please do not use it. Kindly pro=
+cess today to avoid late fees.
+
+Regards,
+Rakesh, Accounts, Acme Facility Services

@@ -1,0 +1,29 @@
+{
+  "customer_id": "MB-200101",
+  "name": "Ananya Rao",
+  "segment": "Wealth",
+  "city": "Bengaluru",
+  "email": "ananya.rao@mail.example",
+  "phone": "+91 98450 11223",
+  "pan_masked": "ABCPR****K",
+  "kyc_status": "verified",
+  "risk_rating": "low",
+  "documents_on_file": [
+    "PAN (masked)",
+    "address proof",
+    "photograph"
+  ],
+  "accounts": [
+    {
+      "type": "Savings",
+      "number": "602009000000",
+      "balance_inr": 2845600.0
+    },
+    {
+      "type": "Fixed Deposit",
+      "number": "602009000001",
+      "balance_inr": 1500000.0
+    }
+  ],
+  "relationship_manager": "Sneha Iyer"
+}

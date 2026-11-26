@@ -54,10 +54,23 @@ class MockProvider(BaseProvider):
         preview = {"model": model or "mock-gullible-1", "system": system, "messages": messages,
                    "tools": [t["name"] for t in tools]}
 
+        # Multi-step document workflows (list -> read -> act), see mock_workflows.py
+        from .mock_workflows import plan
+        planned = plan(messages, tools, _last_user(messages))
+        if planned:
+            return ChatResult(tool_calls=[ToolCall(id="call_" + uuid.uuid4().hex[:8], name=n, arguments=a)
+                                          for n, a in planned], stop_reason="tool_use", request_preview=preview,
+                              input_tokens=len(str(messages)) // 4, output_tokens=30 * len(planned))
+
         # After a tool ran, summarise its result.
         if last.get("role") == "tool":
-            content = _context(last["content"]) or last["content"]   # unwrap isolated (untrusted) tool output
-            return ChatResult(text=f"Here is what I found:\n{content.strip()[:1200]}",
+            batch = []                                  # all results of the last tool round
+            for m in reversed(messages):
+                if m["role"] != "tool":
+                    break
+                batch.insert(0, _context(m["content"]) or m["content"])   # unwrap isolated tool output
+            content = "\n".join(b.strip() for b in batch)
+            return ChatResult(text=f"Here is what I found:\n{content.strip()[:1500]}",
                               stop_reason="end_turn", request_preview=preview,
                               input_tokens=len(str(messages)) // 4, output_tokens=60)
 

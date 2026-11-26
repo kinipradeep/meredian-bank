@@ -158,7 +158,7 @@ class Challenge(Base):
     detector: Mapped[str] = mapped_column(String(40))   # matches a detector in agents/detectors.py
     points: Mapped[int] = mapped_column(Integer, default=100)
     hint: Mapped[str] = mapped_column(Text, default="")
-    domain: Mapped[str] = mapped_column(String(60), default="")
+    domain: Mapped[str] = mapped_column(String(200), default="")
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
@@ -234,3 +234,55 @@ class OutboxEmail(Base):
     subject: Mapped[str] = mapped_column(String(300), default="")
     body: Mapped[str] = mapped_column(Text, default="")
     blocked: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+# ---------------------------------------------------------------- MeriDrive (the bank's file estate) and its workflows
+
+class DriveFile(Base):
+    """A file in the bank's document drive. Bytes live on disk under FILES_ROOT; text is cached here."""
+    __tablename__ = "drive_files"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    path: Mapped[str] = mapped_column(String(400), unique=True, index=True)   # e.g. finance/ap/inbox/INV-1.pdf
+    title: Mapped[str] = mapped_column(String(300), default="")
+    access: Mapped[str] = mapped_column(String(20), default="staff")  # public|customer|staff|finance|hr|it|board
+    owner: Mapped[str] = mapped_column(String(20), default="")        # customer ID for access=customer
+    description: Mapped[str] = mapped_column(Text, default="")
+    poisoned: Mapped[str] = mapped_column(Text, default="")           # trainer note: how it is poisoned
+    tags: Mapped[list] = mapped_column(JSON, default=list)
+    size: Mapped[int] = mapped_column(Integer, default=0)
+    sha256: Mapped[str] = mapped_column(String(64), default="")
+    text_full: Mapped[str] = mapped_column(Text, default="")
+    text_visible: Mapped[str] = mapped_column(Text, default="")
+    uploaded_by: Mapped[str] = mapped_column(String(320), default="seed")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
+
+
+class VendorPayment(Base):
+    """Payments made (simulated) by the accounts-payable agent."""
+    __tablename__ = "vendor_payments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    agent_id: Mapped[int | None] = mapped_column(ForeignKey("agents.id"), nullable=True)
+    vendor: Mapped[str] = mapped_column(String(200))
+    invoice_ref: Mapped[str] = mapped_column(String(100), default="")
+    amount: Mapped[float] = mapped_column(Float, default=0)
+    account_no: Mapped[str] = mapped_column(String(40), default="")
+    ifsc: Mapped[str] = mapped_column(String(20), default="")
+    status: Mapped[str] = mapped_column(String(20), default="paid")    # paid|pending_approval|blocked|approved|rejected
+    verified: Mapped[bool] = mapped_column(Boolean, default=False)     # payee matched the vendor master
+    reason: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+
+
+class CandidateScreening(Base):
+    """Decisions recorded by the HR screening agent."""
+    __tablename__ = "candidate_screenings"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    agent_id: Mapped[int | None] = mapped_column(ForeignKey("agents.id"), nullable=True)
+    candidate: Mapped[str] = mapped_column(String(200))
+    score: Mapped[float] = mapped_column(Float, default=0)
+    decision: Mapped[str] = mapped_column(String(30), default="")      # shortlist|reject|hold
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

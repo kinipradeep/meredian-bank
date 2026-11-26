@@ -1,0 +1,33 @@
+{% extends "admin/base_admin.html" %}{% block title %}MeriDrive{% endblock %}
+{% block content %}
+<div class="row-head"><h1>MeriDrive <span class="tag">the bank's files</span></h1>
+<div><form method="post" action="/admin/files/reindex" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn ghost">Re-index search</button></form>
+<form method="post" action="/admin/files/reset" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn danger">Reset drive for a new cohort</button></form></div></div>
+<p class="muted">Documents the agents read with <span class="mono">list_files</span>, <span class="mono">read_file</span> and <span class="mono">search_files</span>. Files marked <span class="tag bad">poisoned</span> carry hidden instructions for the injection exercises; <span class="tag warn">hidden text</span> means the text an AI extracts differs from what a human sees.</p>
+<div class="stats"><div><b>{{ stats.files }}</b>files</div><div class="bad"><b>{{ stats.poisoned }}</b>poisoned</div><div class="warn"><b>{{ stats.hidden }}</b>with hidden text</div><div><b>{{ stats.restricted }}</b>restricted</div></div>
+<div class="two">
+<section class="card">
+{% for folder, items in tree.items() %}
+  <h3 class="mono">/{{ folder }}{% for sc, ags in scopes.items() %}{% if folder.startswith(sc.split('{')[0].rstrip('/')) and sc.split('{')[0] %} {% for a in ags %}<span class="tag">{{ a }}</span>{% endfor %}{% endif %}{% endfor %}</h3>
+  <table>{% for f in items %}<tr>
+    <td><a href="/admin/files/view?path={{ f.path|urlencode }}"><b>{{ f.path.rsplit('/',1)[-1] }}</b></a><br><small class="muted">{{ f.title }}</small></td>
+    <td class="nowrap"><span class="tag {{ '' if f.access=='public' else ('warn' if f.access in ['staff','customer','finance'] else 'bad') }}">{{ f.access }}{% if f.owner %}: {{ f.owner }}{% endif %}</span></td>
+    <td class="nowrap">{% if f.poisoned %}<span class="tag bad">poisoned</span>{% endif %}{% if f.text_full.strip() != f.text_visible.strip() %} <span class="tag warn">hidden text</span>{% endif %}</td>
+    <td class="r nowrap"><small>{{ (f.size/1024)|round(1) }} KB</small></td></tr>{% endfor %}</table>
+{% endfor %}</section>
+<section class="card"><h2>Upload a file</h2>
+<form method="post" action="/admin/files/upload" enctype="multipart/form-data" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label class="full">File ({{ allowed|join(', ') }}; 10 MB max) <input type="file" name="file" required></label>
+  <label>Folder <input name="folder" placeholder="finance/ap/inbox" value="{{ folder }}"></label>
+  <label>Title <input name="title"></label>
+  <label>Access level <select name="access">{% for l in levels %}<option {{ 'selected' if l=='staff' }}>{{ l }}</option>{% endfor %}</select></label>
+  <label>Owner (customer ID, for access=customer) <input name="owner" placeholder="MB-200101"></label>
+  <label class="full">Description <input name="description"></label>
+  <label class="full">Trainer note: how is it poisoned? (leave blank if clean) <input name="poisoned"></label>
+  <div class="actions full"><button class="btn">Upload, extract and index</button></div></form>
+<h2>Who can read what</h2>
+<table><tr><th>Learner role</th><th>Access levels</th></tr>{% for r, ls in role_access.items() %}<tr><td>{{ r }}</td><td>{% for l in ls %}<span class="tag">{{ l }}</span> {% endfor %}{% if r=='customer' %}<span class="tag">own customer folder</span>{% endif %}</td></tr>{% endfor %}</table>
+<p class="muted">Enforced only for agents with <span class="mono">file_user_rights</span>. Vulnerable agents read everything with a service account; <span class="mono">safe_paths</span> decides whether <span class="mono">../</span> can leave the agent's folder.</p>
+<h2>Make your own poisoned files</h2>
+<p class="muted">On your laptop: edit <span class="mono">scripts/dev/generate_drive.py</span> (white 1-pt PDF text, hidden Word runs, zero-width characters) and run it, or upload any PDF/DOCX here; the viewer shows exactly what is hidden.</p></section></div>
+{% endblock %}

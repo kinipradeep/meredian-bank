@@ -1,0 +1,19 @@
+{% extends "admin/base_admin.html" %}{% block title %}{{ f.path }}{% endblock %}
+{% block content %}
+<div class="row-head"><h1 class="mono">{{ f.path }}</h1><div><a class="btn ghost" href="/admin/files/download?path={{ f.path|urlencode }}">Download</a> <a class="btn ghost" href="/admin/files">← MeriDrive</a></div></div>
+<p class="muted">{{ f.title }} · {{ (f.size/1024)|round(1) }} KB · sha256 <span class="mono">{{ f.sha256[:16] }}</span> · uploaded by {{ f.uploaded_by }} · agents that can reach it: {% for a in agents %}<span class="tag">{{ a }}</span> {% else %}none{% endfor %}</p>
+{% if f.poisoned %}<div class="flash error">Poisoned: {{ f.poisoned }}</div>{% endif %}
+{% if hidden %}<section class="card"><h2>Hidden content <span class="tag bad">the AI sees this, a human doesn't</span></h2><pre>{{ hidden }}</pre></section>{% endif %}
+<div class="two">
+<section class="card"><h2>What the model sees <small class="muted">(full extraction)</small></h2><pre>{{ f.text_full }}</pre></section>
+<section class="card"><h2>What a human sees <small class="muted">(strip_hidden_content)</small></h2><pre>{{ f.text_visible }}</pre></section></div>
+<section class="card"><h2>Settings</h2>
+<form method="post" action="/admin/files/meta" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="path" value="{{ f.path }}">
+  <label>Title <input name="title" value="{{ f.title }}"></label>
+  <label>Access <select name="access">{% for l in levels %}<option {{ 'selected' if l == f.access }}>{{ l }}</option>{% endfor %}</select></label>
+  <label>Owner (customer ID) <input name="owner" value="{{ f.owner }}"></label>
+  <label class="full">Description <input name="description" value="{{ f.description }}"></label>
+  <label class="full">Trainer note (poisoned) <input name="poisoned" value="{{ f.poisoned }}"></label>
+  <div class="actions full"><button class="btn">Save</button></div></form>
+<form method="post" action="/admin/files/delete" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="path" value="{{ f.path }}"><button class="btn danger small">Delete file</button></form></section>
+{% endblock %}

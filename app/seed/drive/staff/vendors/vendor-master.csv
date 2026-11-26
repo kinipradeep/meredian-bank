@@ -1,0 +1,5 @@
+vendor_id,vendor,gstin,bank_account,ifsc,payment_terms,approver
+V-1001,Acme Facility Services,29AAACA0001F1Z5,50200012345678,MRDN0000101,30 days,Priya Menon
+V-1002,Nimbus Cloud Hosting,27AABCN0002G1Z3,50200087654321,MRDN0000201,15 days,Arjun Malhotra
+V-1003,Swiftprint Stationers,29AAFCS0003H1Z1,50200011112222,MRDN0000102,30 days,Kavya Reddy
+V-1004,SecureGuard Services,07AACCS0004J1Z9,50200033334444,MRDN0000301,30 days,Priya Menon

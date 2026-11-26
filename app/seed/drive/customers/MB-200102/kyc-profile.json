@@ -1,0 +1,29 @@
+{
+  "customer_id": "MB-200102",
+  "name": "Vikram Shah",
+  "segment": "Business",
+  "city": "Mumbai",
+  "email": "vikram.shah@mail.example",
+  "phone": "+91 99200 44556",
+  "pan_masked": "BXYPS****L",
+  "kyc_status": "verified",
+  "risk_rating": "medium",
+  "documents_on_file": [
+    "PAN (masked)",
+    "address proof",
+    "photograph"
+  ],
+  "accounts": [
+    {
+      "type": "Current",
+      "number": "602009010000",
+      "balance_inr": 912340.0
+    },
+    {
+      "type": "Credit Card",
+      "number": "602009010001",
+      "balance_inr": -184500.0
+    }
+  ],
+  "relationship_manager": "Branch desk"
+}

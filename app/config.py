@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     mcp_demo_url: str = "http://127.0.0.1:8765/mcp"
     mcp_demo_control_token: str = ""
 
+    # MeriDrive: where uploaded and seeded bank files are stored
+    files_root: str = "/var/lib/airange/files"
+
     # Spend control
     max_messages_per_user_per_day: int = 200
 

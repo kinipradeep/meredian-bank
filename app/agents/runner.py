@@ -26,7 +26,7 @@ from ..rag import store
 from .context import DEFAULT_CONTROLS, AgentContext
 from .detectors import evaluate, record_solves
 from .guards import detect_injection, filter_output, wrap_untrusted
-from .tools import TOOLS, run_tool
+from .tools import CONTENT_TOOLS, TOOLS, run_tool
 
 BLOCKED_REPLY = "I can't help with that request. If you need support with your account, please ask me directly."
 GRAPH_NODES = ["input_guard", "retrieve", "model", "tools", "output_guard"]
@@ -200,13 +200,14 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
             out = out if isinstance(out, str) else (
                 "".join(p.get("text", "") for p in out if isinstance(p, dict)) if isinstance(out, list) else str(out))
             source = "native" if tc["name"] in TOOLS else "mcp"
-            if source == "mcp" and c.get("llm_guard_context") and guard_cfg.get("enabled"):
+            untrusted = source == "mcp" or tc["name"] in CONTENT_TOOLS
+            if untrusted and c.get("llm_guard_context") and guard_cfg.get("enabled"):
                 res = _guard_call(llmguard.scan_prompt, out)
                 if res is not None and not res["is_valid"]:
                     ctx.event("guard", guard="llm_guard_tool_result_quarantined",
                               detail=f"{tc['name']}: {', '.join(llmguard.failed(res))}")
                     out = "[tool result withheld by LLM Guard]"
-            if source == "mcp" and c.get("context_isolation"):
+            if untrusted and c.get("context_isolation"):
                 out = wrap_untrusted(out)
             results.append({"name": tc["name"], "source": source, "result": out[:2000]})
             msgs.append(ToolMessage(content=out, tool_call_id=tc["id"], name=tc["name"]))
