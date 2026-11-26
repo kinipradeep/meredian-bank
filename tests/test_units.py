@@ -99,7 +99,7 @@ def test_partner_server_rug_pull_changes_description_and_fingerprint():
 
     class T:  # minimal stand-in for a LangChain tool
         def __init__(self, t):
-            self.name, self.description, self.args_schema = t.name, t.description, t.inputSchema
+            self.name, self.description, self.args_schema = t.name, t.description, t.input_schema
 
     def fx():
         return T(next(t for t in asyncio.run(partner.mcp.list_tools()) if t.name == "fx_rate"))

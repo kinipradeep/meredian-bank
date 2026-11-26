@@ -1,7 +1,7 @@
 {% extends "admin/base_admin.html" %}{% block title %}MCP servers{% endblock %}
 {% block content %}
 <h1>MCP servers</h1>
-<p class="muted">Agents load tools from these Model Context Protocol servers on every turn (via <span class="mono">langchain-mcp-adapters</span>). Inspect a server to read the tool descriptions the model will see, and pin the approved versions so hardened agents refuse changed or poisoned tools.</p>
+<p class="muted">Agents load tools from these Model Context Protocol servers on every turn (via the official MCP Python SDK). Inspect a server to read the tool descriptions the model will see, and pin the approved versions so hardened agents refuse changed or poisoned tools.</p>
 <section class="card"><table><tr><th>Server</th><th>URL</th><th>Pinned tools</th><th>Used by</th><th>Status</th><th></th></tr>
 {% for s in servers %}<tr><td><a href="/admin/mcp/{{ s.slug }}"><b class="mono">{{ s.slug }}</b></a><br><small class="muted">{{ s.name }}</small></td><td class="mono"><small>{{ s.url }}</small></td>
 <td>{{ s.approved|length }}</td><td>{% for a in used[s.slug] %}<span class="tag">{{ a }}</span> {% endfor %}</td>

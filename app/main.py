@@ -12,6 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from . import auth
 from .config import get_settings
 from .db import Base, SessionLocal, engine, migrate
+from .mcp_servers.bank import http_app as bank_http_app
 from .mcp_servers.bank import mcp as bank_mcp
 from .routers import admin, admin_drive, admin_stack, bank, chat
 
@@ -69,7 +70,7 @@ async def lifespan(_app):
         yield
 
 
-bank_mcp_app = bank_mcp.streamable_http_app()     # creates the session manager used in lifespan
+bank_mcp_app = bank_http_app()                     # creates the session manager used in lifespan
 app = FastAPI(title=settings.app_name, docs_url=None, redoc_url=None, lifespan=lifespan)
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key, same_site="lax",
                    https_only=settings.is_production, max_age=60 * 60 * 12, session_cookie="airange_session")

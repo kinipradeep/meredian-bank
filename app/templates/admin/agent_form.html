@@ -30,7 +30,7 @@
     <span><b class="mono">{{ t.name }}</b><br><small class="muted">{{ t.description }}</small></span></label>{% endfor %}</div>
 
   <h2 class="full">MCP servers</h2>
-  <p class="full muted">Tools from these servers are loaded at the start of every turn, through <span class="mono">langchain-mcp-adapters</span>. Manage servers under <a href="/admin/mcp">MCP servers</a>.</p>
+  <p class="full muted">Tools from these servers are loaded at the start of every turn, through <span class="mono">the MCP Python SDK (v2)</span>. Manage servers under <a href="/admin/mcp">MCP servers</a>.</p>
   <div class="full toolgrid">{% for m in mcp_servers %}<label class="check tool"><input type="checkbox" name="mcp_servers" value="{{ m.slug }}" {{ 'checked' if m.slug in (agent.mcp_servers or []) }}>
     <span><b class="mono">{{ m.slug }}</b>{% if not m.enabled %} <span class="tag">off</span>{% endif %}<br><small class="muted">{{ m.name }}</small></span></label>{% else %}<p class="muted">No MCP servers registered.</p>{% endfor %}</div>
 

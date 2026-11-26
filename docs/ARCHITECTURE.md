@@ -30,7 +30,7 @@ browser ─POST /api/chat/<agent>─► chat router (CSRF, rate limit, daily cap
    LLM Guard       search,     LiteLLM (or       (bank, files,    LLM Guard output
                    ACL filter, offline mock)     payments) and
                    quarantine,                   MCP tools via
-                   isolation                     langchain-mcp-adapters
+                   isolation                     the MCP Python SDK (v2)
                                      │
                                      ▼
           detectors (app/agents/detectors.py) → challenge solves, audit log, X-ray trace, Langfuse
