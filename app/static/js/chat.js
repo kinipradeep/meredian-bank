@@ -90,9 +90,10 @@
   function showSolved(list) {
     if (!list || !list.length) return;
     solvedBox.hidden = false;
-    solvedBox.innerHTML = list.map((s) => typeof s === "string" ? `🏁 Challenge solved: <b>${esc(s)}</b>` :
+    solvedBox.innerHTML = list.map((s) => typeof s === "string" ? `🏁 Challenge solved: <b>${esc(s)}</b>` : s.labs ?
+      `🏁 Lab completed: <b>${esc(s.title)}</b>. <a href="/labs/${esc(s.slug)}">See why it worked and how v2 stops it →</a>` :
       `🏁 Solved <b>${esc(s.title)}</b> (+${s.points}${s.first_blood ? " · first blood 🩸" : ""}). Flag: <span class="mono">${esc(s.flag)}</span>`
-    ).join("<br>") + ' · <a href="/ctf">CTF board</a>';
+    ).join("<br>") + ' · <a href="/labs">Labs</a>';
   }
 
   async function load() {

@@ -167,6 +167,14 @@ class Challenge(Base):
     hints: Mapped[list] = mapped_column(JSON, default=list)               # [{"text": ..., "cost": 25}]
     agent_slug: Mapped[str] = mapped_column(String(80), default="")       # where to launch the attack
     sort_order: Mapped[int] = mapped_column(Integer, default=100)
+    # guided-lab content (labs mode)
+    module: Mapped[str] = mapped_column(String(120), default="")
+    module_order: Mapped[int] = mapped_column(Integer, default=100)
+    objectives: Mapped[list] = mapped_column(JSON, default=list)
+    steps: Mapped[list] = mapped_column(JSON, default=list)          # free, revealed one at a time
+    answer: Mapped[str] = mapped_column(Text, default="")
+    defence: Mapped[str] = mapped_column(Text, default="")
+    hardened_slug: Mapped[str] = mapped_column(String(80), default="")
 
 
 class ChallengeSolve(Base):

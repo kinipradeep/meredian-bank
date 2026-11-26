@@ -18,8 +18,34 @@ from .models import Challenge, ChallengeSolve, FlagSubmission, HintUnlock, Setti
 FLAG_RE = re.compile(r"MERIDIAN\{[A-Za-z0-9_-]+\}")
 PLACEHOLDER = re.compile(r"\{\{FLAG:([a-z0-9-]+)\}\}")
 FIRST_BLOOD_BONUS = 0.10
-DEFAULT_EVENT = {"name": "Meridian Bank AI CTF", "timezone": "Asia/Kolkata", "start": "", "end": "", "freeze": "",
-                 "scoreboard_public": True, "show_flags_on_solve": True}
+DEFAULT_EVENT = {"name": "Meridian Bank AI Security Labs", "timezone": "Asia/Kolkata", "start": "", "end": "",
+                 "freeze": "", "scoreboard_public": True, "show_flags_on_solve": True,
+                 "mode": "labs",          # labs: guided, free steps, worked answers | ctf: points, paid hints, scoreboard
+                 "answers": "always"}     # labs mode: always | after_steps | after_completion | hidden
+ANSWER_INDEX = -1                         # HintUnlock index used to record "answer revealed"
+STEP_BASE = 100                           # HintUnlock index 100+i records "step i revealed" (labs mode, free)
+
+
+def labs_mode(db) -> bool:
+    return event(db).get("mode", "labs") == "labs"
+
+
+def reveal(db, user, ch, index: int):
+    """Record a free reveal (lab step or answer) so trainers can see who needed help."""
+    if not db.query(HintUnlock).filter_by(user_id=user.id, challenge_id=ch.id, hint_index=index).first():
+        db.add(HintUnlock(user_id=user.id, challenge_id=ch.id, hint_index=index, cost=0))
+        db.commit()
+
+
+def answer_allowed(db, user, ch, solved: bool, steps_seen: int) -> tuple[bool, str]:
+    policy = event(db).get("answers", "always")
+    if user.is_admin or policy == "always":
+        return True, ""
+    if policy == "after_steps":
+        return steps_seen >= len(ch.steps or []), "Reveal all the guided steps first."
+    if policy == "after_completion":
+        return solved, "The answer unlocks once you complete the lab."
+    return False, "Your trainer has hidden the answers for this session."
 
 
 def _key() -> bytes:

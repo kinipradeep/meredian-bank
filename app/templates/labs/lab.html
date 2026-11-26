@@ -1,0 +1,42 @@
+{% extends "base_bank.html" %}
+{% block title %}{{ ch.title }} · Labs{% endblock %}
+{% block content %}
+<p><a href="/labs">← All labs</a> · <span class="muted">{{ ch.module }}</span></p>
+<div class="ctf-detail">
+<section class="panel">
+  <div class="ctf-top"><span class="diff d-{{ ch.difficulty }}">{{ ch.difficulty }}</span><span class="tag">{{ ch.category }}</span>{% if solve %}<span class="tag good">✓ Completed {{ solve.solved_at.strftime('%d %b %H:%M') }}</span>{% endif %}</div>
+  <h1>{{ ch.title }}</h1>
+  <p>{{ ch.description }}</p>
+  {% if ch.objectives %}<h2>You will learn to</h2><ul>{% for o in ch.objectives %}<li>{{ o }}</li>{% endfor %}</ul>{% endif %}
+  <div class="lab-actions">{% if launch %}<a class="btn gold" href="{{ launch }}">1 · Try it on the vulnerable agent →</a>{% endif %}
+  {% if hardened %}<a class="btn ghost" href="{{ hardened }}">2 · Repeat on {{ hardened_name }} →</a>{% endif %}</div>
+  {% if flash %}<div class="alert {{ 'ok' if flash.kind=='ok' else 'error' }}">{{ flash.msg }}</div>{% endif %}
+  {% if solve %}<div class="alert ok">Completed.{% if flag %} Your proof: <span class="mono">{{ flag }}</span>{% endif %}</div>
+  {% elif ch.kind == 'flag' %}<p class="muted">This lab completes when you submit the password (a <span class="mono">MERIDIAN{…}</span> value) you extracted.</p>
+    <form method="post" action="/ctf/submit" class="flag-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="next" value="/labs/{{ ch.slug }}">
+    <input name="flag" placeholder="MERIDIAN{...}" required autocomplete="off" spellcheck="false"><button class="btn gold">Submit</button></form>
+  {% else %}<p class="muted">This lab completes automatically when your attack succeeds: the chat shows a 🏁 banner.</p>{% endif %}
+
+  <h2 id="steps">Guided steps</h2>
+  <ol class="steps">{% for s in ch.steps or [] %}{% if loop.index0 < seen %}<li>{{ s }}</li>{% endif %}{% endfor %}</ol>
+  {% if seen < (ch.steps or [])|length %}<form method="post" action="/labs/{{ ch.slug }}/step" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+    <button class="btn small ghost">{{ 'Show the first step' if seen == 0 else 'Show the next step' }} ({{ seen }}/{{ (ch.steps or [])|length }})</button></form>
+  {% else %}<p class="muted small">All steps shown.</p>{% endif %}
+
+  <h2 id="answer">Answer</h2>
+  {% if answered %}<div class="answer">{% for line in ch.answer.split('\n') %}<p>{{ line }}</p>{% endfor %}</div>
+  {% elif can_answer %}<form method="post" action="/labs/{{ ch.slug }}/answer" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+    <button class="btn small ghost">Show the worked answer</button></form> <span class="muted small">Try the steps first: you learn more by getting there yourself.</span>
+  {% else %}<p class="muted">{{ why }}</p>{% endif %}
+
+  {% if solve or answered %}<h2>Why the hardened version stops it</h2><p>{{ ch.defence }}</p>{% endif %}
+  <p class="muted small">{{ ch.domain }}</p>
+  <div class="lab-nav">{% if prev %}<a href="/labs/{{ prev.slug }}">← {{ prev.title }}</a>{% else %}<span></span>{% endif %}{% if next_lab %}<a href="/labs/{{ next_lab.slug }}">{{ next_lab.title }} →</a>{% endif %}</div>
+</section>
+<aside class="panel"><h2>How it works</h2>
+  <ol class="small"><li>Open the vulnerable agent and attack it. Watch the <b>X-ray</b> panel to see what the model received and did.</li>
+  <li>Stuck? Reveal the guided steps one at a time, then the worked answer.</li>
+  <li>Repeat the same attack on the hardened agent and use the X-ray to see which control stopped you.</li></ol>
+  <p class="muted small">Steps and answers are free. Your trainer can see which labs you completed and where you needed help.</p></aside>
+</div>
+{% endblock %}

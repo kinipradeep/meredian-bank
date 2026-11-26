@@ -4,11 +4,22 @@ Meridian Bank is a **fictional** bank built for practising attacks on AI systems
 
 ## Getting started
 1. Sign in with Google. You get your own customer profile, accounts and transactions.
-2. Open the **Training lab** to see the challenges, your score and all the agents.
+2. Open **Labs** in the top menu. The labs are grouped into 8 modules, from prompt injection to agent-to-agent attacks.
 3. Each agent has a **v1 (vulnerable)** and a **v2 (hardened)** version. Break v1 first, then try the same attack on v2 and work out which control stopped you.
 
-## How the CTF works
-- Open **CTF** in the top menu for the challenge board, your score and the scoreboard.
+## How the labs work
+Each lab page has:
+- **Objectives:** what you will learn.
+- **1 · Try it:** a link to the vulnerable (v1) agent. Attack it.
+- **Guided steps:** stuck? Reveal the next step. Steps are free; reveal one at a time and try again before opening the next.
+- **Answer:** a worked solution with a prompt that works. Your trainer may hide answers until you've opened every step or completed the lab.
+- **2 · Repeat on hardened:** try the same attack on v2 and work out which control stopped it.
+- **Defence:** shown once you complete the lab or open the answer. It explains why v2 holds.
+
+A lab completes automatically when your attack works (a 🏁 banner appears in the chat). Some labs ask you to find a `MERIDIAN{…}` flag and paste it into the lab page.
+
+## If your trainer runs it as a CTF
+- The same labs become scored challenges. **Labs** in the top menu then shows the challenge board, your score and the scoreboard.
 - Two kinds of challenge:
   - **auto-detected:** when your attack works, the chat shows a 🏁 banner with your points and your personal flag;
   - **submit a flag:** find a `MERIDIAN{…}` flag (for example, the Vault Keeper's password) and paste it into the flag box.

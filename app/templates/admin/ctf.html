@@ -1,11 +1,13 @@
-{% extends "admin/base_admin.html" %}{% block title %}CTF control{% endblock %}
+{% extends "admin/base_admin.html" %}{% block title %}Labs & CTF{% endblock %}
 {% block content %}
-<div class="row-head"><h1>CTF control <span class="tag {{ 'good' if w.state=='running' else 'warn' }}">{{ w.state.replace('_',' ') }}</span>{% if w.frozen %} <span class="tag warn">scoreboard frozen</span>{% endif %}</h1>
-<div><a class="btn ghost" href="/ctf" target="_blank">Open board ↗</a> <a class="btn ghost" href="/ctf/scoreboard" target="_blank">Scoreboard ↗</a> <a class="btn ghost" href="/admin/ctf/scenarios">Scenario records</a></div></div>
+<div class="row-head"><h1>Labs &amp; CTF <span class="tag">{{ 'guided labs' if w.event.mode == 'labs' else 'CTF' }}</span> <span class="tag {{ 'good' if w.state=='running' else 'warn' }}">{{ w.state.replace('_',' ') }}</span>{% if w.frozen %} <span class="tag warn">scoreboard frozen</span>{% endif %}</h1>
+<div><a class="btn ghost" href="/labs" target="_blank">Open as a player ↗</a> <a class="btn ghost" href="/ctf/scoreboard" target="_blank">Scoreboard ↗</a> <a class="btn ghost" href="/admin/ctf/scenarios">Scenario records</a></div></div>
 <div class="stats"><div><b>{{ players }}</b>players</div><div><b>{{ chs|selectattr('enabled')|list|length }}</b>live challenges</div><div><b>{{ counts.values()|sum }}</b>solves</div><div class="{{ 'bad' if shared else '' }}"><b>{{ shared }}</b>shared-flag attempts</div></div>
 <div class="two">
-<section class="card"><h2>Event</h2>
+<section class="card"><h2>Mode and event</h2>
 <form method="post" action="/admin/ctf/event" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label>Mode <select name="mode"><option value="labs" {{ 'selected' if w.event.mode=='labs' }}>Guided labs: free steps, worked answers, progress</option><option value="ctf" {{ 'selected' if w.event.mode=='ctf' }}>CTF: points, paid hints, scoreboard</option></select></label>
+  <label>Worked answers (labs mode) <select name="answers">{% for v, l in [('always','Always available'),('after_steps','After all steps are revealed'),('after_completion','Only after completing the lab'),('hidden','Hidden')] %}<option value="{{ v }}" {{ 'selected' if w.event.answers==v }}>{{ l }}</option>{% endfor %}</select></label>
   <label class="full">Name <input name="name" value="{{ w.event.name }}"></label>
   <label>Start <input type="datetime-local" name="start" value="{{ w.event.start }}"></label>
   <label>End <input type="datetime-local" name="end" value="{{ w.event.end }}"></label>
@@ -21,13 +23,13 @@
 {% for r in board %}<tr><td>{{ r.rank }}</td><td>{{ name(r.user) }} <small class="muted">{{ r.user.email }}</small></td><td class="r"><b>{{ r.points }}</b></td><td class="r">{{ r.solves }}</td><td class="r">{{ r.first_bloods or '' }}</td></tr>{% else %}<tr><td colspan="5" class="muted">No solves yet.</td></tr>{% endfor %}</table></section></div>
 <section class="card"><h2>Challenges</h2>
 <form method="post" action="/admin/ctf/challenges"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
-<table><tr><th>On</th><th>Challenge</th><th>Category</th><th>Difficulty</th><th>Points</th><th>Solves</th><th>Hints (JSON: text + cost)</th></tr>
+<table><tr><th>On</th><th>Lab / challenge</th><th>Category</th><th>Difficulty</th><th>Points</th><th>Completed</th><th>CTF hints (JSON: text + cost)</th></tr>
 {% for c in chs %}<tr><td><input type="checkbox" name="c{{ c.id }}_enabled" {{ 'checked' if c.enabled }}></td>
 <td><b>{{ c.title }}</b><br><small class="mono muted">{{ c.slug }} · {{ c.kind }}{% if c.detector %} · {{ c.detector }}{% endif %} · {{ c.agent_slug }}</small></td>
 <td><input name="c{{ c.id }}_category" value="{{ c.category }}" size="16"></td>
 <td><select name="c{{ c.id }}_difficulty">{% for d in ['easy','medium','hard','insane'] %}<option {{ 'selected' if d==c.difficulty }}>{{ d }}</option>{% endfor %}</select></td>
 <td><input name="c{{ c.id }}_points" type="number" value="{{ c.points }}" style="width:80px"></td>
-<td>{{ counts.get(c.id, 0) }}<br><small class="muted">{{ hint_counts.get(c.id, 0) }} hints</small></td>
+<td>{{ counts.get(c.id, 0) }}<br><small class="muted">{{ answer_counts.get(c.id, 0) }} viewed answer · {{ hint_counts.get(c.id, 0) }} CTF hints</small></td>
 <td><textarea name="c{{ c.id }}_hints" rows="2" cols="40">{{ c.hints|tojson }}</textarea></td></tr>{% endfor %}</table>
 <div class="actions"><button class="btn">Save challenges</button></div></form></section>
 <section class="card"><h2>Flag submissions</h2>

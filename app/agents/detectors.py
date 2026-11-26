@@ -41,12 +41,13 @@ def evaluate(ctx, reply: str) -> list[str]:
 
 def record_solves(db, ctx, keys: list[str], evidence: str) -> list[dict]:
     """Award detector challenges. Returns [{title, points, first_blood, flag}] for the X-ray banner."""
-    from ..ctf import award, flag_for
+    from ..ctf import award, flag_for, labs_mode
     solved = []
+    labs = labs_mode(db)
     for key in keys:
         for ch in db.query(Challenge).filter_by(detector=key, enabled=True):
             s = award(db, ctx.user, ch, agent_id=getattr(ctx.agent, "id", None), evidence=evidence)
             if s:
                 solved.append({"title": ch.title, "points": s.points, "first_blood": s.first_blood,
-                               "flag": flag_for(ctx.user.id, ch.slug)})
+                               "flag": flag_for(ctx.user.id, ch.slug), "labs": labs, "slug": ch.slug})
     return solved

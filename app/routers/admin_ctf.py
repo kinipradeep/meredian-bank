@@ -20,11 +20,15 @@ router = APIRouter(prefix="/admin", dependencies=[Depends(require_admin)])
 def ctf_home(request: Request, db: Session = Depends(get_db), user: User = Depends(require_admin)):
     chs = db.query(Challenge).order_by(Challenge.sort_order, Challenge.id).all()
     counts = dict(db.query(ChallengeSolve.challenge_id, func.count()).group_by(ChallengeSolve.challenge_id).all())
-    hint_counts = dict(db.query(HintUnlock.challenge_id, func.count()).group_by(HintUnlock.challenge_id).all())
+    hint_counts = dict(db.query(HintUnlock.challenge_id, func.count()).filter(HintUnlock.hint_index.between(0, 99))
+                       .group_by(HintUnlock.challenge_id).all())
+    answer_counts = dict(db.query(HintUnlock.challenge_id, func.count()).filter(HintUnlock.hint_index == ctf.ANSWER_INDEX)
+                         .group_by(HintUnlock.challenge_id).all())
     users = {u.id: u for u in db.query(User)}
     subs = db.query(FlagSubmission).order_by(FlagSubmission.id.desc()).limit(40).all()
     shared = db.query(FlagSubmission).filter(FlagSubmission.note.like("flag belongs%")).count()
     return render(request, "ctf.html", user, w=ctf.window(db), chs=chs, counts=counts, hint_counts=hint_counts,
+                  answer_counts=answer_counts,
                   subs=subs, users=users, shared=shared, board=ctf.scoreboard(db, respect_freeze=False)[:10],
                   name=ctf.display_name, players=db.query(User).filter(User.role != "admin").count())
 
@@ -32,16 +36,19 @@ def ctf_home(request: Request, db: Session = Depends(get_db), user: User = Depen
 @router.post("/ctf/event")
 def ctf_event(request: Request, name: str = Form(""), timezone: str = Form("Asia/Kolkata"), start: str = Form(""),
               end: str = Form(""), freeze: str = Form(""), scoreboard_public: str = Form(""),
-              show_flags_on_solve: str = Form(""), csrf: str = Form(""), db: Session = Depends(get_db),
+              show_flags_on_solve: str = Form(""), mode: str = Form("labs"), answers: str = Form("always"),
+              csrf: str = Form(""), db: Session = Depends(get_db),
               user: User = Depends(require_admin)):
     verify_csrf(request, csrf)
     row = db.get(Setting, "ctf") or Setting(key="ctf", value={})
     row.value = {"name": name or ctf.DEFAULT_EVENT["name"], "timezone": timezone or "Asia/Kolkata",
                  "start": start, "end": end, "freeze": freeze, "scoreboard_public": bool(scoreboard_public),
-                 "show_flags_on_solve": bool(show_flags_on_solve)}
+                 "show_flags_on_solve": bool(show_flags_on_solve),
+                 "mode": mode if mode in ("labs", "ctf") else "labs",
+                 "answers": answers if answers in ("always", "after_steps", "after_completion", "hidden") else "always"}
     db.add(row)
     db.commit()
-    audit(db, user, "CTF: event settings updated", start=start, end=end, freeze=freeze)
+    audit(db, user, "Labs/CTF settings updated", mode=mode, answers=answers, start=start, end=end, freeze=freeze)
     flash(request, "Event settings saved.")
     return back("/admin/ctf")
 

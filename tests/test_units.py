@@ -222,3 +222,13 @@ def test_markdown_sanitiser():
     assert external_resources(text) == ["https://evil.example/p?d=1"]
     clean, removed = sanitize_markdown(text)
     assert "evil.example" not in clean and "meridianbank.example" in clean and removed
+
+
+def test_lab_content_covers_every_challenge():
+    from app.seed.ctf_seed import EXISTING_META, NEW_CHALLENGES
+    from app.seed.lab_content import LABS, MODULES
+    slugs = set(EXISTING_META) | {c["slug"] for c in NEW_CHALLENGES}
+    assert slugs <= set(LABS), slugs - set(LABS)
+    for slug, lab in LABS.items():
+        assert lab["module"] in MODULES, slug
+        assert lab["objectives"] and len(lab["steps"]) >= 2 and lab["answer"] and lab["defence"], slug

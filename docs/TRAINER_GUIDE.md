@@ -15,8 +15,24 @@
 4. **Visibility.** Under **Settings**, decide whether learners see the X-ray panel. Keeping it on for the first half and switching it off for a "blind" round works well.
 5. **Tracing (optional).** Paste Langfuse Cloud keys into **Tracing** so you can replay any learner's attack node by node.
 
-## Running it as a CTF
-The range is a full capture-the-flag platform. Players use **CTF** in the top menu; trainers use **Admin → CTF control**.
+## Labs or CTF
+**Admin → Labs & CTF → Mode** switches the whole range between two formats. Players always use **Labs** in the top menu.
+
+### Labs (default)
+21 guided labs in 8 modules. Each has objectives, free step-by-step hints, a worked answer, and a defence write-up that appears after the lab is completed or the answer is opened. No points or scoreboard.
+
+**Answer policy** decides when learners can open the worked answer:
+- *always* (default): self-paced study.
+- *after_steps*: only once every guided step has been opened.
+- *after_completion*: only after solving it; good for a graded session.
+- *hidden*: never; you walk through answers yourself.
+
+The control page shows how many learners opened each answer. Lab content (objectives, steps, answers, defences) lives in `app/seed/lab_content.py` and is re-applied on every start.
+
+> The repository is public, so the answers are in the source. For an assessed session, set the policy to *after_completion* or *hidden*, and don't rely on secrecy for grading.
+
+### CTF
+Set the mode to *CTF* for a competitive event; the same challenges become scored.
 
 - **Event window:** set start, end and an optional scoreboard freeze (time zone configurable).
   - Before the start, players see a countdown and no challenges.

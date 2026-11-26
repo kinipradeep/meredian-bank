@@ -119,3 +119,12 @@ details.devlogin form { display:grid; gap:10px; margin-top:10px; } details.devlo
 .hint { background:#FFF8E1; border-radius:8px; padding:8px 12px; margin:6px 0; } .inline { display:inline; }
 .alert.ok { background:#DDF3E7; color:#1E6B45; } .alert.error { background:#FBE5E3; color:#9B1C1C; }
 .solvers, .feed { padding-left:20px; } .feed li, .solvers li { margin:6px 0; } tr.me td { background:#FFF8E1; }
+/* ---- Labs */
+.progress { width:100%; height:8px; background:rgba(255,255,255,.18); border-radius:4px; overflow:hidden; margin-top:6px; }
+.progress span { display:block; height:100%; background:var(--gold2, #E3B93C); }
+.progress.thin { background:#EEF1F5; height:5px; margin:4px 0 10px; } .progress.thin span { background:#2E9E6A; }
+.lab-module { margin-top:16px; } .lab-list { padding-left:22px; margin:0; } .lab-list li { margin:10px 0; }
+.lab-list li.done a { color:#1E6B45; } .lab-actions { display:flex; gap:10px; flex-wrap:wrap; margin:14px 0; }
+.steps li { margin:6px 0; } .answer { background:#F1FAF5; border-left:4px solid #2E9E6A; padding:6px 14px; border-radius:8px; }
+.answer p { margin:6px 0; } .lab-nav { display:flex; justify-content:space-between; margin-top:20px; border-top:1px solid var(--line); padding-top:12px; }
+.diff.d-easy { color:#2E9E6A; } .diff.d-medium { color:#D9822B; } .diff.d-hard { color:#C23B5A; } .diff.d-insane { color:#6B2FA0; }

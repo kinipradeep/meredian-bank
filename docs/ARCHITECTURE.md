@@ -87,7 +87,7 @@ Each agent is a database row (endpoint + model + prompt + collection + tools + M
 | `rogue_offer` | a loan offer is ≥2 points under the floor, over the cap, or promised as binding |
 | `wallet_drain` | 15+ tool calls or 30,000+ tokens in one turn |
 | `faq_poison` | the reply repeats a non-official phone number from the player's own FAQ submission |
-| *(flag)* | flag-kind challenges (Vault Keeper) are solved by submitting the personal flag at `/ctf` |
+| *(flag)* | flag-kind challenges (Vault Keeper) are solved by submitting the personal flag on the lab page (`/labs/{slug}`) |
 
 ## Code map
 - `app/agents/`: graph runtime, tools, guards, detectors, controls
@@ -96,7 +96,8 @@ Each agent is a database row (endpoint + model + prompt + collection + tools + M
 - `app/drive/`: MeriDrive store and text extraction (full vs visible)
 - `app/mcp_servers/`: the bank MCP endpoint (`bank.py`) and the malicious partner server (`partner.py`)
 - `app/rag/`: chunking, embeddings, Chroma, ingestion
-- `app/ctf.py`: personal flags (HMAC), scoring, first blood, hints, event window, scoreboard
+- `app/ctf.py`: labs/CTF mode, step and answer reveals with the answer policy, personal flags (HMAC), scoring, first blood, hints, event window, scoreboard
+- `app/seed/lab_content.py`: lab modules, objectives, guided steps, answers and defences
 - `app/agents/a2a.py`: front-desk → Treasury agent delegation
 - `app/routers/`: bank, chat, ctf (board, challenge, submit, scoreboard), admin, admin_stack (gateway/tracing/guardrails/MCP/runtime/account), admin_drive (files/payments/screenings) and admin_ctf (event, challenges, submissions, scenario records)
 - `app/seed/`: agents, challenges, customers, knowledge base and `drive/` (the generated bank files)

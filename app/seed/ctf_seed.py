@@ -238,6 +238,14 @@ def seed_ctf(db, embedder: str):
             if not ch.hints:
                 ch.hints = c["hints"]
     db.commit()
+    from .lab_content import LABS, MODULES
+    for slug, lab in LABS.items():
+        ch = db.query(Challenge).filter_by(slug=slug).first()
+        if ch:     # lab content is maintained in code; refreshed on every start
+            ch.module, ch.objectives, ch.steps = lab["module"], lab["objectives"], lab["steps"]
+            ch.answer, ch.defence, ch.hardened_slug = lab["answer"], lab["defence"], lab["hardened"]
+            ch.module_order = MODULES.index(lab["module"]) * 100 + lab["order"]
+    db.commit()
     store.ensure_collection(FAQ_COLLECTION, embedder=embedder, description="Community FAQ (poisoning scenario)")
     if not db.query(FaqEntry).filter(FaqEntry.user_id.is_(None)).first():
         for q, a in OFFICIAL_FAQ:

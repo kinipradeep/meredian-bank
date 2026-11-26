@@ -1,6 +1,10 @@
 # Changelog
 
 ## 2026-11-26
+- **Guided labs (now the default):**
+  - 21 labs in 8 modules, each with objectives, step-by-step hints, a worked answer and a defence write-up;
+  - answer policy (*always*, *after_steps*, *after_completion*, *hidden*) and answer-view counts in **Admin → Labs & CTF**;
+  - CTF scoring is still available as a mode.
 - **CTF platform:**
   - challenge board, challenge pages, flag submission, scoreboard;
   - personal HMAC flags with shared-flag detection, first-blood bonus, hints with point costs, event window and scoreboard freeze;

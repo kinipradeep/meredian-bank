@@ -1,0 +1,24 @@
+{% extends "base_bank.html" %}
+{% block title %}Labs · Meridian Bank{% endblock %}
+{% block content %}
+<div class="ctf-head">
+  <div><h1>{{ w.event.name }}</h1>
+  <p class="muted">Guided hands-on labs: attack Meridian Bank's AI agents, then see how the hardened version stops you. Every lab has step-by-step guidance and a worked answer. Work through the modules in order, or jump to what interests you.</p></div>
+  <div class="score-box"><b>{{ mine|length }}/{{ total }}</b><span>labs completed</span>
+    <div class="progress"><span style="width:{{ (100 * mine|length / (total or 1))|round|int }}%"></span></div></div>
+</div>
+{% if flash %}<div class="alert {{ 'ok' if flash.kind=='ok' else 'error' }}">{{ flash.msg }}</div>{% endif %}
+{% for module, items in modules.items() %}{% set done = items|selectattr('id', 'in', mine)|list|length %}
+<section class="panel lab-module">
+  <div class="panel-head"><h2>{{ module }}</h2><span class="muted small">{{ done }}/{{ items|length }} done</span></div>
+  <div class="progress thin"><span style="width:{{ (100 * done / items|length)|round|int }}%"></span></div>
+  <ol class="lab-list">
+  {% for c in items %}<li class="{{ 'done' if c.id in mine }}">
+    <a href="/labs/{{ c.slug }}"><b>{{ c.title }}</b></a>
+    <span class="diff d-{{ c.difficulty }}">{{ c.difficulty }}</span>
+    {% if c.id in mine %}<span class="tag good">✓ completed</span>{% elif c.id in answered %}<span class="tag">answer viewed</span>{% endif %}
+    <div class="muted small">{{ (c.objectives or [c.description])[0] }}</div>
+  </li>{% endfor %}</ol>
+</section>
+{% endfor %}
+{% endblock %}

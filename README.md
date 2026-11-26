@@ -28,7 +28,7 @@ No Docker: everything is installed natively on one Ubuntu 24.04 VM, with Python 
 | **LLM Guard** | ML scanners (prompt injection, secrets, invisible text, PII, banned output) on the input, on retrieved/tool context and on the output. | **Guardrails**: service status, scanner selection, per-agent switches, a playground, recent guard decisions |
 | **MCP** (official MCP Python SDK v2) | Agents load tools from MCP servers. A malicious demo server shows tool poisoning and rug pulls, and the bank exposes its own tools over MCP. | **MCP servers**: register servers, inspect the tool descriptions the model sees, pin approved fingerprints, trigger the rug pull, configure the bank endpoint, see every MCP call |
 | **MeriDrive** (bank file estate) | 30+ fictional bank files the agents read: statements and KYC records, invoices, a vendor master, resumes, runbooks, secret configs, board minutes. Formats include PDF, Word, email, CSV, JSON, YAML and Markdown. Poisoned files hide instructions in white 1-pt text, hidden Word runs, HTML comments or zero-width characters. | **MeriDrive**: browse, upload, edit access levels, see *what the model sees vs what a human sees*, re-index, reset for a new cohort. Also **Vendor payments** (approve/reject) and **Candidate screenings**. |
-| **CTF engine** | **21 challenges in 13 categories**, from easy to insane. Personal HMAC flags (sharing doesn't work), auto-detected and submit-a-flag challenges, first blood, hints with point costs, scoreboard with freeze, event start/end | **CTF control**: event window, per-challenge points/difficulty/hints, submission log with shared-flag detection, reset. **Scenario records**: treasury transfers, loan offers, FAQ moderation |
+| **Labs & CTF engine** | **21 guided labs in 8 modules** with steps, answers and defences; or run them as a CTF. Personal HMAC flags (sharing doesn't work), auto-detected and submit-a-flag challenges, first blood, hints with point costs, scoreboard with freeze, event start/end | **Labs & CTF**: mode, answer policy, event window, per-challenge points/difficulty/hints, submission log with shared-flag detection, reset. **Scenario records**: treasury transfers, loan offers, FAQ moderation |
 | **Chroma + fastembed** | Vector database and local embeddings | **Vector database**: chunking, embeddings, raw vectors, filtered vs unfiltered search, 2D map, playground |
 
 ## Attacks and defences
@@ -121,6 +121,11 @@ Go to **Admin → LLM gateway → Add a model**. For example:
 | Langfuse Cloud | your Langfuse account |
 
 **Day-to-day:** `journalctl -u airange-app -f` (or another service name) for logs; `systemctl restart airange-<name>` to restart; `/opt/airange/scripts/backup.sh` to back up by hand.
+
+## Labs
+**Labs** in the top menu opens 21 guided labs in 8 modules (prompt injection, sensitive data, indirect injection, excessive agency, MCP supply chain, agent-to-agent, output handling, resource abuse). Each lab has objectives, a link to the vulnerable v1 agent, free step-by-step hints, a worked answer, the hardened v2 agent to retry against, and a defence write-up. Labs complete automatically when the attack works.
+
+Trainers can switch to a scored CTF (personal flags, first blood, scoreboard, event window) and set when answers become visible in **Admin → Labs & CTF**. See the [trainer guide](docs/TRAINER_GUIDE.md).
 
 ## Teaching flow
 1. **Vector DB tour.** Open the chunks, the embedding bars and the 2D map. The side-by-side search shows the HR file reaching a customer when the search has no access filter.
