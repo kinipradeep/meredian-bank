@@ -6,7 +6,7 @@ in Admin > MCP, so the same endpoint can be vulnerable or hardened - and every c
 """
 from types import SimpleNamespace
 
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 
 from ..agents.context import DEFAULT_CONTROLS, AgentContext
@@ -16,25 +16,25 @@ from ..db import SessionLocal
 from ..integrations.settings import get_integration
 from ..models import Agent, AuditLog, User
 
-mcp = FastMCP("Meridian Bank", streamable_http_path="/", stateless_http=True, json_response=True,
-              transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))
+mcp = MCPServer("Meridian Bank")
 
 
-class McpAuthError(Exception):
-    pass
+def http_app():
+    """The Starlette app mounted at /mcp/. Call once; it also creates mcp.session_manager."""
+    return mcp.streamable_http_app(streamable_http_path="/", stateless_http=True, json_response=True,
+                                   transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))
 
 
 def _call(ctx: Context, name: str, args: dict) -> str:
-    req = ctx.request_context.request
-    auth = (req.headers.get("authorization", "") if req is not None else "").removeprefix("Bearer ").strip()
+    auth = ((ctx.headers or {}).get("authorization", "")).removeprefix("Bearer ").strip()
     db = SessionLocal()
     try:
         cfg = get_integration(db, "mcp_bank")
         if not cfg.get("enabled"):
             return "The Meridian Bank MCP endpoint is switched off."
         user = db.query(User).filter_by(mcp_token=auth).first() if auth else None
-        if user is None or not user.is_active:
-            raise McpAuthError("Invalid or missing token. Copy yours from the Training lab page.")
+        if user is None or not user.is_active:     # a plain result (not an exception) so clients see why
+            return "Unauthorised: invalid or missing token. Create one on the Training lab page."
         profile = db.query(Agent).filter_by(slug=cfg.get("profile_agent")).first()
         controls = dict(DEFAULT_CONTROLS)
         controls.update(profile.controls if profile else {})

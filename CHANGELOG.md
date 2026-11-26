@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-26
+- **MCP Python SDK 2.3:** both MCP servers migrated from `FastMCP` to `MCPServer`. Our own MCP client (`app/integrations/mcp_client.py`) replaces `langchain-mcp-adapters`, which does not support mcp 2 yet. Pinned tool fingerprints stay valid.
 - **MeriDrive:** 30 fictional bank files (PDF, Word, email, CSV, JSON, YAML) with poisoned documents.
   - New file, payment and screening tools.
   - New agents: Ledger (accounts payable), Hira (HR screening) and the Ops copilot; Aria can now read the customer's own documents.

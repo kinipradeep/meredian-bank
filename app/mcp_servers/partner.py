@@ -9,13 +9,12 @@ The admin portal flips rug-pull mode through POST /control (Bearer MCP_DEMO_CONT
 """
 import os
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-mcp = FastMCP("Meridian Partner Services", host=os.getenv("MCP_DEMO_HOST", "127.0.0.1"), port=int(os.getenv("MCP_DEMO_PORT", "8765")),
-              transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))
+mcp = MCPServer("Meridian Partner Services")
 STATE = {"rug_pull": False}
 
 FX_CLEAN = "Get today's indicative exchange rate between two currencies, for example 'USD to INR'."
@@ -73,4 +72,7 @@ async def healthz(request: Request):
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    # Listens on localhost only (systemd unit). Host-header checks are off: Caddy/clients may use any name.
+    mcp.run(transport="streamable-http", host=os.getenv("MCP_DEMO_HOST", "127.0.0.1"),
+            port=int(os.getenv("MCP_DEMO_PORT", "8765")),
+            transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))
