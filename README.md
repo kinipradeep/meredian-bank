@@ -47,7 +47,7 @@ The seeded agents use the **offline demo model**, so every attack works before y
 
 ### 1. Push this project to a private GitHub repo
 ```bash
-git remote add origin git@github.com:<you>/meridian-ai-range.git
+git remote add origin git@github.com:kinipradeep/meredian-bank.git
 git push -u origin main
 ```
 
@@ -57,9 +57,9 @@ Create an Ubuntu 24.04 Linode. Add A records for `range.example.com`, `gateway.r
 ### 3. Bootstrap the VM (one time)
 ```bash
 ssh root@<vm-ip>
-curl -fsSL https://raw.githubusercontent.com/<you>/meridian-ai-range/main/scripts/bootstrap-vm.sh -o bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/kinipradeep/meredian-bank/main/scripts/bootstrap-vm.sh -o bootstrap.sh
 #   (private repo? scp scripts/bootstrap-vm.sh to the VM instead)
-bash bootstrap.sh git@github.com:<you>/meridian-ai-range.git range.example.com you@example.com
+bash bootstrap.sh git@github.com:kinipradeep/meredian-bank.git range.example.com you@example.com
 ```
 The script installs Docker, a firewall (22/80/443 only), fail2ban, swap and a `deploy` user. It then:
 1. prints a **read-only deploy key** for you to add under GitHub → repo → *Settings → Deploy keys*;
