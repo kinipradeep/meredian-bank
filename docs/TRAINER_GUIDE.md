@@ -4,6 +4,8 @@
 > private (GitHub → Settings → Danger zone → Change visibility) or keep a copy of this guide elsewhere.
 
 ## Before the session (30 minutes)
+Co-trainers need their own admin login: add them under **Admin → Administrators**. Don't share yours.
+
 
 1. **Models.** Under **Admin → LLM gateway**, add at least one real model and click **Test**.
    - A cheap, gullible model makes the vulnerable agents fall over convincingly: `groq/llama-3.1-8b-instant`.

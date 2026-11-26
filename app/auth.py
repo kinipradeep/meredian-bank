@@ -31,6 +31,10 @@ class AdminRequired(Exception):
     pass
 
 
+class PasswordChangeRequired(Exception):
+    pass
+
+
 def current_user(request: Request, db: Session = Depends(get_db)) -> User | None:
     uid = request.session.get("uid")
     if not uid:
@@ -48,9 +52,12 @@ def require_user(user: User | None = Depends(current_user)) -> User:
     return user
 
 
-def require_admin(user: User = Depends(require_user)) -> User:
+def require_admin(request: Request, user: User = Depends(require_user)) -> User:
     if not user.is_admin:
         raise AdminRequired()
+    # An admin signed in with a temporary password must set their own before using the panel.
+    if user.must_change_password and request.session.get("pw_login") and not request.url.path.startswith("/admin/account"):
+        raise PasswordChangeRequired()
     return user
 
 
@@ -113,6 +120,9 @@ def password_login(request: Request, email: str = Form(...), password: str = For
     db.commit()
     request.session.clear()
     request.session["uid"] = user.id
+    request.session["pw_login"] = True
+    if user.is_admin and user.must_change_password:
+        return RedirectResponse("/admin/account", status_code=303)
     return RedirectResponse("/admin" if user.is_admin else "/", status_code=303)
 
 

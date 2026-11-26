@@ -1,0 +1,32 @@
+{% extends "admin/base_admin.html" %}{% block title %}Administrators{% endblock %}
+{% block content %}
+<h1>Administrators</h1>
+<p class="muted">Administrators can use the whole admin panel: agents, models, keys, learners' conversations and progress. Only give this to trainers you trust.</p>
+{% if new_pw %}<section class="card newpw"><h2>Temporary password for {{ new_pw.email }}</h2>
+<p>Shown <b>once</b>. Send it over a separate channel from the sign-in link. They must choose their own password at first sign-in.</p>
+<p class="mono big">{{ new_pw.pw }}</p>
+<p class="muted">Sign in at <span class="mono">{{ base_url }}/login</span> → Administrator sign-in.</p></section>{% endif %}
+<div class="two">
+<section class="card"><h2>Current administrators ({{ admins|length }})</h2>
+<table><tr><th>Administrator</th><th>Sign-in</th><th>Last login</th><th></th></tr>
+{% for a in admins %}<tr>
+  <td><b>{{ a.name }}</b>{% if a.id == user.id %} <span class="tag">you</span>{% endif %}{% if not a.is_active %} <span class="tag bad">deactivated</span>{% endif %}<br><small class="muted">{{ a.email }}</small></td>
+  <td>{% if a.password_hash %}<span class="tag good">password</span>{% if a.must_change_password %} <span class="tag warn">temporary</span>{% endif %} {% endif %}{% if google_enabled %}<span class="tag">Google</span>{% endif %}{% if a.email|lower in env_admins %} <span class="tag" title="Set in ADMIN_EMAILS in the server's .env">.env</span>{% endif %}</td>
+  <td class="nowrap"><small>{{ a.last_login.strftime('%d %b %H:%M') if a.last_login else 'never' }}</small></td>
+  <td class="nowrap">{% if a.id != user.id %}
+    <form method="post" action="/admin/admins/{{ a.id }}/reset-password" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small ghost">{{ 'New temporary password' if a.password_hash else 'Give a password' }}</button></form>
+    {% if a.password_hash and google_enabled %}<form method="post" action="/admin/admins/{{ a.id }}/remove-password" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small ghost">Google only</button></form>{% endif %}
+    {% if a.email|lower not in env_admins %}<form method="post" action="/admin/admins/{{ a.id }}/revoke" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small danger">Remove admin</button></form>{% endif %}
+  {% endif %}</td></tr>{% endfor %}</table>
+<p class="muted">Admins tagged <b>.env</b> come from <span class="mono">ADMIN_EMAILS</span> on the server and can only be removed there. Removing an admin takes effect on their next click; they keep a normal learner account.</p></section>
+<section class="card"><h2>Add an administrator</h2>
+<form method="post" action="/admin/admins" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label class="full">Email <input type="email" name="email" required placeholder="trainer@example.com" maxlength="320"></label>
+  <label class="full">Name (optional) <input name="name" maxlength="200"></label>
+  <fieldset class="full"><legend>How will they sign in?</legend>
+    <label class="check"><input type="radio" name="method" value="google" {{ 'checked' if google_enabled }} {{ 'disabled' if not google_enabled }}> With Google, using this email address{% if not google_enabled %} <small class="muted">(Google sign-in isn't configured)</small>{% endif %}</label>
+    <label class="check"><input type="radio" name="method" value="password" {{ 'checked' if not google_enabled }}> With a temporary password (shown once; they must change it)</label>
+  </fieldset>
+  <div class="actions full"><button class="btn">Add administrator</button></div></form>
+<p class="muted">If the person already has a learner account, it's promoted and keeps its history. Every change here is recorded in the Activity log.</p></section></div>
+{% endblock %}

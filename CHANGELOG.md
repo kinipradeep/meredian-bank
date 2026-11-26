@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-26
+- **Administrators page:** add admins by Google sign-in or a temporary password (forced change at first sign-in), remove admin rights with last-admin and `ADMIN_EMAILS` guards, reset passwords; all audited.
 - **Learner progress (Admin):** learner × lab grid with completion, steps, answers and activity; per-learner timeline; CSV export; conversations filtered by learner.
 - **Guided labs (now the default):**
   - 21 labs in 8 modules, each with objectives, step-by-step hints, a worked answer and a defence write-up;

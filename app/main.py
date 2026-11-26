@@ -106,6 +106,11 @@ async def _login_required(request: Request, exc):
     return RedirectResponse("/login", status_code=303)
 
 
+@app.exception_handler(auth.PasswordChangeRequired)
+async def _password_change_required(request: Request, exc):
+    return RedirectResponse("/admin/account", status_code=303)
+
+
 @app.exception_handler(auth.AdminRequired)
 async def _admin_required(request: Request, exc):
     return HTMLResponse("Admins only", status_code=403)

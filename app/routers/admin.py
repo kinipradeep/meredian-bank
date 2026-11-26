@@ -349,6 +349,15 @@ def user_save(uid: int, request: Request, role: str = Form(...), active: str = F
     if u.id == user.id and (role != "admin" or not active):
         flash(request, "You can't remove your own admin access.", "error")
         return back("/admin/users")
+    if u.role == "admin" and (role != "admin" or not active):
+        from ..config import get_settings
+        if u.email.lower() in get_settings().admin_email_list:
+            flash(request, f"{u.email} is in ADMIN_EMAILS in the server's .env and would become admin again at next sign-in.", "error")
+            return back("/admin/users")
+        if db.query(User).filter(User.role == "admin", User.is_active.is_(True)).count() <= 1:
+            flash(request, "You can't remove the last administrator.", "error")
+            return back("/admin/users")
+        u.password_hash, u.must_change_password = "", False
     u.role = role if role in ROLES else "customer"
     u.is_active = bool(active)
     db.commit()

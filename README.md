@@ -81,7 +81,7 @@ curl -fsSL https://raw.githubusercontent.com/kinipradeep/meredian-bank/main/scri
 6. **creates the admin account** for the email you passed: it uses `--admin-password` if given, otherwise it generates a password (shown once, never stored);
 7. prints the admin login, the other logins and the optional GitHub Actions secrets.
 
-**Admin account.** Sign in at `https://range.example.com/login` → *Administrator sign-in*. This works before Google sign-in is set up. The same email also gets admin rights when it signs in with Google. Under **Admin → My account** you can change your password and create more password admins. Re-running the installer keeps the existing password unless you pass `--admin-password`. Five wrong attempts lock that email from that IP for 15 minutes. If you forget the password, reset it on the VM:
+**Admin account.** Sign in at `https://range.example.com/login` → *Administrator sign-in*. This works before Google sign-in is set up. The same email also gets admin rights when it signs in with Google. Change your own password under **Admin → My account**. Add more administrators under **Admin → Administrators** (see below). Re-running the installer keeps the existing password unless you pass `--admin-password`. Five wrong attempts lock that email from that IP for 15 minutes. If you forget the password, reset it on the VM:
 ```bash
 sudo -u airange bash -c 'cd /opt/airange && set -a && . ./.env && .venv/bin/python -m app.cli create-admin --email you@example.com'
 ```
@@ -121,6 +121,16 @@ Go to **Admin → LLM gateway → Add a model**. For example:
 | Langfuse Cloud | your Langfuse account |
 
 **Day-to-day:** `journalctl -u airange-app -f` (or another service name) for logs; `systemctl restart airange-<name>` to restart; `/opt/airange/scripts/backup.sh` to back up by hand.
+
+## More administrators
+**Admin → Administrators** lists every admin and lets you:
+- **Add an administrator** by email, choosing how they sign in:
+  - *Google:* they get admin access the next time they sign in with Google using that address;
+  - *temporary password:* shown to you once; they must set their own password before they can use the panel.
+- **Remove admin** rights. Access ends on their next click and they keep a normal learner account. You can't remove yourself or the last admin.
+- Issue a **new temporary password**, or switch an admin to **Google only**.
+
+Admins listed in `ADMIN_EMAILS` in `.env` are tagged *.env* and can only be removed there, since they'd be promoted again at their next sign-in. Every change is recorded in the Activity log.
 
 ## Labs
 **Labs** in the top menu opens 21 guided labs in 8 modules (prompt injection, sensitive data, indirect injection, excessive agency, MCP supply chain, agent-to-agent, output handling, resource abuse). Each lab has objectives, a link to the vulnerable v1 agent, free step-by-step hints, a worked answer, the hardened v2 agent to retry against, and a defence write-up. Labs complete automatically when the attack works.
