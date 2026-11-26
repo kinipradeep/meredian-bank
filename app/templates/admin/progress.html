@@ -1,0 +1,34 @@
+{% extends "admin/base_admin.html" %}{% block title %}Learner progress{% endblock %}
+{% block content %}
+{% set marks = {'done': ('✓', 'Completed without the answer'), 'done_with_answer': ('✓A', 'Completed after viewing the answer'), 'answer': ('A', 'Viewed the answer, not completed'), 'stuck': ('…', 'Opened steps, not completed'), 'trying': ('·', 'Chatting with the agent, no steps opened'), 'none': ('', 'Not started')} %}
+<div class="row-head"><h1>Learner progress</h1>
+<div><a class="btn" href="/admin/progress.csv{{ '?module=' ~ module|urlencode if module }}">Download CSV</a></div></div>
+{% set total = rows|length %}
+<div class="stats">
+  <div><b>{{ total }}</b>learners</div>
+  <div><b>{{ chs|length }}</b>labs shown</div>
+  <div><b>{{ (rows|sum(attribute='pct') / total)|round|int if total else 0 }}%</b>average completion</div>
+  <div><b>{{ rows|selectattr('done', 'equalto', chs|length)|list|length if chs else 0 }}</b>finished everything</div>
+  <div class="warn"><b>{{ rows|sum(attribute='answers') }}</b>answers viewed</div>
+</div>
+<form method="get" class="filters">
+  <label>Module <select name="module"><option value="">All modules</option>{% for m in modules %}<option value="{{ m }}" {{ 'selected' if m == module }}>{{ m }}</option>{% endfor %}</select></label>
+  <label>Sort <select name="sort">{% for v, l in [('name','Name'),('progress','Most labs done'),('stuck','Struggling first'),('active','Recently active')] %}<option value="{{ v }}" {{ 'selected' if v == sort }}>{{ l }}</option>{% endfor %}</select></label>
+  <button class="btn ghost">Apply</button>
+</form>
+<p class="muted legend">{% for k, v in marks.items() if k != 'none' %}<span class="pg pg-{{ k }}">{{ v[0] }}</span> {{ v[1] }} &nbsp; {% endfor %}A number under a mark is the steps opened.</p>
+<section class="card scroll-x">
+<table class="progress-grid">
+  <tr><th>Learner</th><th class="r">Done</th><th class="r">Steps</th><th class="r">Answers</th><th>Last active</th>
+    {% for c in chs %}<th class="lab-col" title="{{ c.title }}"><span>{{ c.slug }}</span></th>{% endfor %}</tr>
+  {% for r in rows %}<tr>
+    <td><a href="/admin/progress/{{ r.user.id }}">{{ name(r.user) }}</a><br><small class="muted">{{ r.user.email }}</small></td>
+    <td class="r"><b>{{ r.done }}</b>/{{ chs|length }}<div class="bar"><i style="width:{{ r.pct }}%"></i></div></td>
+    <td class="r">{{ r.steps }}</td><td class="r">{{ r.answers }}</td>
+    <td><small>{{ r.last.strftime('%d %b %H:%M') if r.last else '—' }}</small></td>
+    {% for x in r.cells %}<td class="pg pg-{{ x.state }}" title="{{ chs[loop.index0].title }}: {{ marks[x.state][1] }}{{ ', ' ~ x.steps ~ ' steps' if x.steps }}{{ ', ' ~ x.attempts ~ ' messages' if x.attempts }}">{{ marks[x.state][0] }}{% if x.steps %}<sub>{{ x.steps }}</sub>{% endif %}</td>{% endfor %}
+  </tr>{% else %}<tr><td colspan="{{ 5 + chs|length }}" class="muted">No learners have signed in yet.</td></tr>{% endfor %}
+  {% if rows %}<tr class="totals"><td colspan="5"><b>Completed</b> / struggling / answer viewed</td>
+    {% for s in lab_stats %}<td class="r"><b>{{ s.done }}</b><br><small class="muted">{{ s.stuck }} / {{ s.answers }}</small></td>{% endfor %}</tr>{% endif %}
+</table></section>
+{% endblock %}

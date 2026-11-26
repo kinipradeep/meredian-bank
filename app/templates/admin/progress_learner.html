@@ -1,0 +1,25 @@
+{% extends "admin/base_admin.html" %}{% block title %}{{ name(learner) }}: progress{% endblock %}
+{% block content %}
+{% set labels = {'done': ('Completed', 'good'), 'done_with_answer': ('Completed after the answer', 'warn'), 'answer': ('Answer viewed', 'warn'), 'stuck': ('Using steps', 'warn'), 'trying': ('Attempting', ''), 'none': ('Not started', '')} %}
+<div class="row-head"><h1>{{ name(learner) }} <small class="muted">{{ learner.email }}</small></h1>
+<div><a class="btn ghost" href="/admin/chats?user_id={{ learner.id }}">Their conversations</a> <a class="btn ghost" href="/admin/progress">All learners</a></div></div>
+<div class="stats">
+  <div><b>{{ row.done }}/{{ labs|length }}</b>labs done ({{ row.pct }}%)</div>
+  <div class="good"><b>{{ row.unaided }}</b>done without steps</div>
+  <div><b>{{ row.steps }}</b>steps opened</div>
+  <div class="warn"><b>{{ row.answers }}</b>answers viewed</div>
+  <div><b>{{ row.messages }}</b>messages sent</div>
+  <div><b>{{ row.last.strftime('%d %b %H:%M') if row.last else '—' }}</b>last active</div>
+</div>
+<section class="card"><table>
+  <tr><th>Module</th><th>Lab</th><th>Status</th><th class="r">Steps</th><th class="r">Messages</th><th>Completed</th><th>Answer viewed</th></tr>
+  {% for c, x in labs %}<tr>
+    <td><small class="muted">{{ c.module }}</small></td>
+    <td><a href="/labs/{{ c.slug }}" target="_blank">{{ c.title }}</a></td>
+    <td><span class="tag {{ labels[x.state][1] }}">{{ labels[x.state][0] }}</span></td>
+    <td class="r">{{ x.steps or '' }}</td><td class="r">{{ x.attempts or '' }}</td>
+    <td><small>{{ x.solved_at.strftime('%d %b %H:%M') if x.solved_at else '' }}</small></td>
+    <td><small>{{ x.answer_at.strftime('%d %b %H:%M') if x.answer_at else '' }}</small></td>
+  </tr>{% endfor %}
+</table></section>
+{% endblock %}

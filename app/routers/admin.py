@@ -588,8 +588,11 @@ def activity(request: Request, flag: str = "", event: str = "", db: Session = De
 
 
 @router.get("/chats")
-def chats(request: Request, db: Session = Depends(get_db), user: User = Depends(require_admin)):
-    msgs = db.query(ChatMessage).filter_by(role="assistant").order_by(ChatMessage.id.desc()).limit(100).all()
+def chats(request: Request, user_id: int = 0, db: Session = Depends(get_db), user: User = Depends(require_admin)):
+    q = db.query(ChatMessage).filter_by(role="assistant")
+    if user_id:
+        q = q.join(ChatSession, ChatSession.id == ChatMessage.session_id).filter(ChatSession.user_id == user_id)
+    msgs = q.order_by(ChatMessage.id.desc()).limit(100).all()
     sessions = {s.id: s for s in db.query(ChatSession)}
     return render(request, "chats.html", user, msgs=msgs, sessions=sessions,
                   users={u.id: u for u in db.query(User)}, agents={a.id: a for a in db.query(Agent)})

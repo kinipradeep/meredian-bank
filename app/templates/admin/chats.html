@@ -1,6 +1,6 @@
 {% extends "admin/base_admin.html" %}{% block title %}Conversations{% endblock %}
 {% block content %}
-<h1>Conversations</h1>
+<h1>Conversations{% if request.query_params.get('user_id') %} <span class="tag">one learner</span> <a class="btn ghost" href="/admin/chats">Show all</a>{% endif %}</h1>
 <section class="card"><table><tr><th>When</th><th>User</th><th>Agent</th><th>Reply</th><th>Flags</th><th></th></tr>
 {% for m in msgs %}{% set s = sessions.get(m.session_id) %}<tr><td class="nowrap">{{ m.created_at.strftime('%d %b %H:%M') }}</td>
   <td><small>{{ users[s.user_id].email if s and s.user_id in users else '' }}</small></td><td><small class="mono">{{ agents[s.agent_id].slug if s and s.agent_id in agents else '' }}</small></td>

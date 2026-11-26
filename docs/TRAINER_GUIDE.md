@@ -31,6 +31,19 @@ The control page shows how many learners opened each answer. Lab content (object
 
 > The repository is public, so the answers are in the source. For an assessed session, set the policy to *after_completion* or *hidden*, and don't rely on secrecy for grading.
 
+### Monitoring learners
+**Admin → Learner progress** shows one row per learner and one column per lab:
+
+| Mark | Meaning |
+|---|---|
+| ✓ | Completed without the answer |
+| ✓A | Completed after viewing the answer |
+| A | Viewed the answer, not completed |
+| … | Opened guided steps, not completed |
+| · | Chatting with the lab's agent, no steps opened |
+
+A small number under a mark is how many steps the learner opened. The bottom row counts, per lab, how many learners completed it, are struggling, or viewed the answer, which shows where to step in. Filter by module, sort by *Struggling first* or *Recently active*, and use **Download CSV** for grading. Click a learner for their lab-by-lab timeline and a link to their conversations.
+
 ### CTF
 Set the mode to *CTF* for a competitive event; the same challenges become scored.
 
