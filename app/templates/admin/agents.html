@@ -1,0 +1,29 @@
+{% extends "admin/base_admin.html" %}{% block title %}Agents{% endblock %}
+{% block content %}
+<div class="row-head"><h1>Agents</h1><div><a class="btn" href="/admin/agents/new">+ Deploy a new agent</a>
+  <form method="post" action="/admin/agents/kill-all" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn danger">Kill switch: all offline</button></form></div></div>
+<section class="card"><table>
+  <tr><th>Agent</th><th>Surface</th><th>Mode</th><th>Model</th><th>Tools</th><th>Status</th><th></th></tr>
+  {% for a in agents %}<tr>
+    <td><a href="/admin/agents/{{ a.id }}"><b>{{ a.name }}</b></a><br><small class="muted mono">{{ a.slug }}</small></td>
+    <td>{{ a.surface }}</td><td><span class="tag {{ 'bad' if a.mode == 'vulnerable' else 'good' }}">{{ a.mode }}</span></td>
+    <td>{{ a.provider.name if a.provider else '—' }}<br><small class="mono">{{ a.model }}</small></td>
+    <td><small>{{ a.tools|join(', ') }}</small></td>
+    <td>{% if a.enabled %}<span class="tag good">live</span>{% else %}<span class="tag">offline</span>{% endif %}</td>
+    <td class="nowrap">
+      <form method="post" action="/admin/agents/{{ a.id }}/toggle" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small {{ 'danger' if a.enabled else '' }}">{{ 'Take offline' if a.enabled else 'Go live' }}</button></form>
+      <form method="post" action="/admin/agents/{{ a.id }}/clone" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small ghost">Clone</button></form>
+      <a class="btn small ghost" href="/admin/agents/{{ a.id }}/export">Export</a></td></tr>{% endfor %}
+</table></section>
+<div class="two">
+<section class="card"><h2>Switch every agent to one model</h2>
+  <form method="post" action="/admin/agents/bulk-provider" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+    <label>Provider <select name="provider_id">{% for p in providers %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select></label>
+    <label>Model (blank = provider default) <input name="model"></label>
+    <div class="actions full"><button class="btn">Apply to all agents</button></div></form></section>
+<section class="card"><h2>Import an agent (JSON)</h2>
+  <form method="post" action="/admin/agents/import"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+    <textarea name="payload" rows="6" class="full" placeholder='{"name": "...", "system_prompt": "...", "tools": ["search_knowledge"]}'></textarea>
+    <div class="actions"><button class="btn">Import</button></div></form></section>
+</div>
+{% endblock %}

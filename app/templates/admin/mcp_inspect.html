@@ -1,0 +1,20 @@
+{% extends "admin/base_admin.html" %}{% block title %}{{ s.slug }}{% endblock %}
+{% block content %}
+<div class="row-head"><h1>MCP server: <span class="mono">{{ s.slug }}</span></h1><a class="btn ghost" href="/admin/mcp">← MCP servers</a></div>
+<p class="muted">{{ s.name }} · <span class="mono">{{ s.url }}</span> · {{ s.transport }} · used by {% for a in used %}<span class="tag">{{ a.slug }}</span> {% else %}no agents{% endfor %}</p>
+{% if err %}<div class="flash error">Could not list tools: {{ err }}</div>{% endif %}
+{% if tools %}
+<form method="post" action="/admin/mcp/{{ s.slug }}/approve"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+<section class="card"><h2>Tools exactly as the model sees them</h2>
+{% for t in tools %}<div class="hit {{ 'inj' if t.suspicious }}">
+  <label class="check"><input type="checkbox" name="tools" value="{{ t.name }}" {{ 'checked' if t.status == 'approved' or (t.status == 'new' and not t.suspicious) }}>
+  <b class="mono">{{ t.name }}</b></label>
+  <span class="tag {{ 'good' if t.status=='approved' else ('bad' if t.status=='changed' else '') }}">{{ t.status }}</span>
+  {% if t.suspicious %}<span class="tag bad">hidden instructions</span>{% endif %}
+  <span class="sim mono">fingerprint {{ t.hash }}{% if t.approved and t.approved != t.hash %} · approved {{ t.approved }}{% endif %}</span>
+  <pre>{{ t.description }}</pre><small class="muted">parameters: <span class="mono">{{ t.schema }}</span></small>
+  {% if t.suspicious %}<p class="muted">Matched: {% for p in t.suspicious %}<span class="mono">{{ p }}</span> {% endfor %}</p>{% endif %}
+</div>{% endfor %}
+<div class="actions"><button class="btn">Pin the ticked tool descriptions</button></div>
+<p class="muted">Pinning stores a fingerprint of each tool's name, description and schema. Agents with <span class="mono">mcp_pin_tools</span> only receive tools whose fingerprint still matches, which blocks rug pulls and newly added tools.</p></section></form>{% endif %}
+{% endblock %}

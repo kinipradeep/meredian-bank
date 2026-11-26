@@ -1,0 +1,13 @@
+{% extends "admin/base_admin.html" %}{% block title %}Vector map{% endblock %}
+{% block content %}
+<div class="row-head"><h1>Vector map: <span class="mono">{{ name }}</span></h1><a class="btn ghost" href="/admin/rag/c/{{ name }}">← Collection</a></div>
+<p class="muted">Every chunk's embedding projected to 2D (PCA). Chunks with similar meaning sit near each other. Add a query to see where it lands.</p>
+<form method="get" class="card inline-form"><input name="q" value="{{ q }}" placeholder="refund for a card payment" size="50"> <button class="btn">Plot query</button></form>
+<section class="card">
+{% if pts %}<svg viewBox="0 0 760 480" class="map" role="img" aria-label="2D projection of chunk embeddings">
+  {% for p in pts %}<circle cx="{{ p.x }}" cy="{{ p.y }}" r="{{ 8 if p.access != 'public' else 6 }}" class="pt c{{ p.color }} {{ 'restricted' if p.access != 'public' }}"><title>{{ p.title }} ({{ p.access }})&#10;{{ p.text }}</title></circle>{% endfor %}
+  {% if qpt %}<g><circle cx="{{ qpt[0] }}" cy="{{ qpt[1] }}" r="11" class="qpt"/><text x="{{ qpt[0] + 14 }}" y="{{ qpt[1] + 4 }}" class="qlabel">query</text></g>{% endif %}
+</svg>
+<div class="legend">{% for t, c in legend %}<span><i class="sw c{{ c }}"></i>{{ t }}</span>{% endfor %}<span><i class="sw ring"></i>restricted (staff or hr)</span></div>
+{% else %}<p class="muted">Need at least two vectors.</p>{% endif %}</section>
+{% endblock %}

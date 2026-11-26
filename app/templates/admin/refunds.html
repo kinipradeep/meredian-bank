@@ -1,0 +1,11 @@
+{% extends "admin/base_admin.html" %}{% block title %}Refunds{% endblock %}
+{% block content %}
+<h1>Refund approvals</h1>
+<p class="muted">Refunds above an agent's approval threshold wait here for a human (human in the loop).</p>
+<section class="card"><table><tr><th>#</th><th>When</th><th>User</th><th>Agent</th><th>Transaction</th><th class="r">Amount</th><th>Reason</th><th>Status</th><th></th></tr>
+{% for r in rows %}<tr><td>{{ r.id }}</td><td class="nowrap">{{ r.created_at.strftime('%d %b %H:%M') }}</td><td><small>{{ users[r.user_id].email if r.user_id in users else '' }}</small></td>
+  <td><small class="mono">{{ agents[r.agent_id].slug if r.agent_id in agents else '' }}</small></td><td class="mono">{{ r.txn_ref }}<br><small>{{ r.account_no }}</small></td>
+  <td class="r">{{ r.amount|inr }}</td><td><small>{{ r.reason[:120] }}</small></td><td><span class="tag {{ 'warn' if r.status=='pending_approval' else ('good' if r.status in ['approved'] else '') }}">{{ r.status.replace('_',' ') }}</span></td>
+  <td class="nowrap">{% if r.status == 'pending_approval' %}{% for act in ['approve','reject'] %}<form method="post" action="/admin/refunds/{{ r.id }}/{{ act }}" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small {{ 'danger' if act=='reject' }}">{{ act|capitalize }}</button></form> {% endfor %}{% endif %}</td></tr>
+{% else %}<tr><td colspan="9" class="muted">No refunds yet.</td></tr>{% endfor %}</table></section>
+{% endblock %}

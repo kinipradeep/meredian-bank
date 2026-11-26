@@ -1,0 +1,23 @@
+{% extends "base_bank.html" %}
+{% block title %}Dashboard · Meridian Bank{% endblock %}
+{% block content %}
+<h1 class="greet">Good day, {{ (customer.full_name if customer else user.name).split(' ')[0] }}</h1>
+<div class="grid-3">
+  {% for a in accounts %}
+  <div class="acct {{ 'credit' if a.balance < 0 else '' }}">
+    <span class="kind">{{ a.kind }}</span><span class="num">{{ a.account_no }}</span>
+    <b class="bal">{{ a.balance|inr }}</b>
+    <small>{{ 'Outstanding' if a.balance < 0 else 'Available balance' }}</small>
+  </div>
+  {% endfor %}
+  <div class="acct cta"><span class="kind">Need help?</span><p>Aria can explain fees, check transactions and raise disputes.</p><a class="btn gold" href="/support">Chat with Aria</a></div>
+</div>
+<section class="panel">
+  <div class="panel-head"><h2>Recent transactions</h2><a href="/transactions">View all</a></div>
+  <table class="txns">
+    <tr><th>Date</th><th>Description</th><th>Reference</th><th class="r">Amount</th><th>Status</th></tr>
+    {% for t in txns %}<tr><td>{{ t.posted_at.strftime('%d %b') }}</td><td>{{ t.description }}</td><td class="mono">{{ t.txn_ref }}</td>
+      <td class="r {{ 'neg' if t.amount < 0 else 'pos' }}">{{ t.amount|inr }}</td><td><span class="status {{ t.status }}">{{ t.status }}</span></td></tr>{% endfor %}
+  </table>
+</section>
+{% endblock %}

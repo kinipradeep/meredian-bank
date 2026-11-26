@@ -1,0 +1,29 @@
+{% extends "base_bank.html" %}
+{% block title %}{{ title }} · Meridian Bank{% endblock %}
+{% block content %}
+<div class="chat-head">
+  <div><h1>{{ title }}</h1><p class="muted">{{ subtitle }}</p></div>
+  {% if agents|length > 1 %}
+  <form method="get" class="agent-pick"><label>Assistant
+    <select name="agent" id="agent-select">{% for a in agents %}<option value="{{ a.slug }}" {{ 'selected' if a.id == agent.id }}>{{ a.name }}</option>{% endfor %}</select></label>
+    <button class="btn ghost">Switch</button></form>
+  {% endif %}
+</div>
+<div class="chat-layout" id="chat-app" data-agent="{{ agent.slug }}" data-mode="{{ agent.mode }}">
+  <section class="chat">
+    <div class="chat-title"><span class="dot"></span>{{ agent.name }}<span class="tag {{ 'bad' if agent.mode == 'vulnerable' else 'good' }}">{{ agent.mode }}</span>
+      <button class="linkbtn" id="reset-btn" type="button">New conversation</button></div>
+    <div class="messages" id="messages" aria-live="polite"></div>
+    <form class="composer" id="composer">
+      <textarea id="msg" rows="2" maxlength="4000" placeholder="Type your message… (Enter to send, Shift+Enter for a new line)"></textarea>
+      <button class="btn gold" id="send-btn">Send</button>
+    </form>
+    <div class="solved" id="solved" hidden></div>
+  </section>
+  <aside class="xray" id="xray" hidden>
+    <div class="xray-head"><h2>X-ray</h2><span class="muted">What the model saw and did on the last turn</span></div>
+    <div id="xray-body"><p class="muted">Send a message to see the trace.</p></div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}<script src="/static/js/chat.js"></script>{% endblock %}

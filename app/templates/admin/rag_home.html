@@ -1,0 +1,17 @@
+{% extends "admin/base_admin.html" %}{% block title %}Vector database{% endblock %}
+{% block content %}
+<h1>Vector database <span class="tag">Chroma</span></h1>
+{% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+<section class="card"><table><tr><th>Collection</th><th>Vectors</th><th>Embedding model</th><th>Description</th><th></th></tr>
+{% for c in collections %}<tr><td><a href="/admin/rag/c/{{ c.name }}"><b class="mono">{{ c.name }}</b></a></td><td>{{ c.count }}</td>
+  <td>{{ c.metadata.get('embedder','?') }}</td><td>{{ c.metadata.get('description','') }}</td>
+  <td class="nowrap"><a class="btn small ghost" href="/admin/rag/c/{{ c.name }}/browse">Browse</a> <a class="btn small ghost" href="/admin/rag/c/{{ c.name }}/search">Search</a> <a class="btn small ghost" href="/admin/rag/c/{{ c.name }}/map">Map</a></td></tr>
+{% else %}<tr><td colspan="5" class="muted">No collections yet.</td></tr>{% endfor %}</table></section>
+<section class="card"><h2>New collection</h2>
+<form method="post" action="/admin/rag/collections" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label>Name <input name="name" required placeholder="hr-portal-kb"></label>
+  <label>Embedding model <select name="embedder">{% for k, v in embedders.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+  <label class="full">Description <input name="description"></label>
+  <div class="actions full"><button class="btn">Create</button></div></form>
+<p class="muted">The embedding model is fixed per collection: a query must be embedded with the same model as the stored chunks.</p></section>
+{% endblock %}

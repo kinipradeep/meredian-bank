@@ -1,0 +1,15 @@
+{% extends "admin/base_admin.html" %}{% block title %}Search {{ name }}{% endblock %}
+{% block content %}
+<div class="row-head"><h1>Similarity search: <span class="mono">{{ name }}</span></h1><a class="btn ghost" href="/admin/rag/c/{{ name }}">← Collection</a></div>
+<form method="get" class="card grid-form">
+  <label class="full">Query <input name="q" value="{{ q }}" placeholder="What is the salary of the Head of Operations?"></label>
+  <label>Search as role <select name="role">{% for r in roles %}<option {{ 'selected' if r == role }}>{{ r }}</option>{% endfor %}</select></label>
+  <label>Top k <input name="k" type="number" value="{{ k }}"></label><div class="actions full"><button class="btn">Search</button></div></form>
+{% if q %}<div class="two">
+{% for label, hits in [('Without access control (vulnerable)', unfiltered), ('Permission-aware for role “' ~ role ~ '” (hardened)', filtered)] %}
+<section class="card"><h2>{{ label }}</h2>
+  {% for h in hits %}<div class="hit {{ 'inj' if h.injection }}"><div><b>{{ h.title }}</b> <span class="tag {{ '' if h.access=='public' else 'warn' }}">{{ h.access }}</span>
+    <span class="sim">similarity {{ h.similarity }}</span>{% if h.injection %} <span class="tag bad">injection pattern</span>{% endif %}</div>
+    <div class="simbar"><span style="width:{{ ((h.similarity if h.similarity > 0 else 0) * 100)|round(0)|int }}%"></span></div><pre>{{ h.text[:400] }}</pre></div>
+  {% else %}<p class="muted">No results.</p>{% endfor %}</section>{% endfor %}</div>{% endif %}
+{% endblock %}

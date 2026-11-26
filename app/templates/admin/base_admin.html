@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Admin{% endblock %} · AI Security Range</title>
+<link rel="stylesheet" href="/static/css/admin.css"></head>
+<body>
+<aside class="side">
+  <div class="logo">AI Security <b>Range</b><small>Admin</small></div>
+  <nav>
+    <a href="/admin">Dashboard</a>
+    <span class="grp">Agents</span>
+    <a href="/admin/agents">Agents</a><a href="/admin/runtime">Agent runtime (LangGraph)</a><a href="/admin/mcp">MCP servers</a>
+    <span class="grp">Models</span>
+    <a href="/admin/gateway">LLM gateway (LiteLLM)</a><a href="/admin/providers">Model endpoints</a>
+    <span class="grp">Security &amp; observability</span>
+    <a href="/admin/guardrails">Guardrails (LLM Guard)</a><a href="/admin/observability">Tracing (Langfuse)</a>
+    <span class="grp">Platform</span>
+    <a href="/admin/users">Users</a>
+    <span class="grp">RAG lab</span>
+    <a href="/admin/rag">Vector database</a><a href="/admin/rag/playground">Chunking &amp; embedding playground</a>
+    <span class="grp">Monitoring</span>
+    <a href="/admin/activity">Activity log</a><a href="/admin/chats">Conversations</a><a href="/admin/outbox">Outbox (emails)</a><a href="/admin/refunds">Refund approvals</a>
+    <span class="grp">Training</span>
+    <a href="/admin/challenges">Challenges</a><a href="/admin/settings">Settings</a>
+    <a href="/" class="back">← Meridian Bank site</a>
+  </nav>
+</aside>
+<main class="main">
+  {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.msg }}</div>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+</body></html>

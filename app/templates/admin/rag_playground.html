@@ -1,0 +1,22 @@
+{% extends "admin/base_admin.html" %}{% block title %}Playground{% endblock %}
+{% block content %}
+<h1>Chunking &amp; embedding playground</h1>
+<form method="post" class="card grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label class="full">Text <textarea name="text" rows="7">{{ text }}</textarea></label>
+  <label>Strategy <select name="strategy">{% for k in strategies %}<option {{ 'selected' if k == strategy }}>{{ k }}</option>{% endfor %}</select></label>
+  <label>Size <input type="number" name="size" value="{{ size }}"></label><label>Overlap <input type="number" name="overlap" value="{{ overlap }}"></label>
+  <label>Embedder <select name="embedder">{% for k, v in embedders.items() %}<option value="{{ k }}" {{ 'selected' if k == embedder }}>{{ v }}</option>{% endfor %}</select></label>
+  <label>Sentence A <input name="a" value="{{ a }}"></label><label>Sentence B <input name="b" value="{{ b }}"></label>
+  <div class="actions full"><button class="btn">Run</button></div></form>
+<div class="two">
+<section class="card"><h2>Chunks ({{ chunks|length }})</h2>
+  {% for c in chunks %}<div class="chunk c{{ c.index % 6 }}"><span class="chunk-h">#{{ c.index }} · {{ c.chars }} chars · ~{{ c.approx_tokens }} tokens</span><pre>{{ c.text }}</pre></div>{% endfor %}</section>
+<section class="card"><h2>Embeddings</h2>
+  {% if err %}<div class="flash error">{{ err }}</div>{% endif %}
+  {% if sim is not none %}<p>Cosine similarity of A and B: <b class="big">{{ sim }}</b></p>
+  <div class="simbar"><span style="width:{{ ((sim if sim > 0 else 0) * 100)|round(0)|int }}%"></span></div>
+  <p class="muted">1.0 = same direction (same meaning), 0 = unrelated. The hash embedder matches words; real models match meaning.</p>
+  <h3>Vector for sentence A ({{ va.dims }} dims, first {{ va.head|length }})</h3>
+  <div class="bars">{% for v in va.head %}<span class="bar {{ 'neg' if v < 0 }}" style="height:{{ (v|abs * 400)|round(0)|int + 2 }}px"></span>{% endfor %}</div>{% endif %}
+</section></div>
+{% endblock %}

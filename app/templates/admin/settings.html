@@ -1,0 +1,10 @@
+{% extends "admin/base_admin.html" %}{% block title %}Settings{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+<form method="post" class="card grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label class="full">Banner shown on every bank page <input name="banner" value="{{ banner }}"></label>
+  <label class="check full"><input type="checkbox" name="xray" {{ 'checked' if xray }}> Let learners see the X-ray panel (admins always see it)</label>
+  <div class="actions full"><button class="btn">Save</button></div></form>
+<section class="card"><h2>Set in the server's .env file</h2>
+<p>Google OAuth client, admin emails, allowed email domains, daily message cap per learner, default embedding model, and encryption keys are configured in <span class="mono">.env</span> on the server. Restart the app after changing them.</p></section>
+{% endblock %}

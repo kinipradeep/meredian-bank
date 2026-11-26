@@ -1,0 +1,7 @@
+{% extends "admin/base_admin.html" %}{% block title %}Trace{% endblock %}
+{% block content %}
+<div class="row-head"><h1>Turn trace</h1><a class="btn ghost" href="/admin/chats">← Conversations</a></div>
+<div class="two"><section class="card"><h2>User</h2><pre>{{ prev.content if prev else '' }}</pre><h2>Assistant</h2><pre>{{ m.content }}</pre></section>
+<section class="card"><h2>System prompt as sent</h2><pre>{{ m.trace.get('system_prompt','') }}</pre></section></div>
+<section class="card"><h2>Full trace (JSON)</h2><pre>{{ m.trace|tojson_pretty }}</pre></section>
+{% endblock %}

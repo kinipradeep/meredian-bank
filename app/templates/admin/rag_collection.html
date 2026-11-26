@@ -1,0 +1,22 @@
+{% extends "admin/base_admin.html" %}{% block title %}{{ name }}{% endblock %}
+{% block content %}
+<div class="row-head"><h1 class="mono">{{ name }}</h1><div>
+  <a class="btn ghost" href="/admin/rag/c/{{ name }}/browse">Browse vectors</a> <a class="btn ghost" href="/admin/rag/c/{{ name }}/search">Search</a> <a class="btn ghost" href="/admin/rag/c/{{ name }}/map">Vector map</a></div></div>
+<p class="muted">{{ count }} vectors · embedder <b>{{ meta.get('embedder') }}</b> · distance: cosine</p>
+<section class="card"><h2>Documents</h2><table><tr><th>Title</th><th>Access</th><th>Chunking</th><th>Chunks</th><th>Notes</th></tr>
+{% for d in docs %}<tr><td><a href="/admin/rag/doc/{{ d.id }}"><b>{{ d.title }}</b></a><br><small class="muted">{{ d.filename }}</small></td>
+  <td><span class="tag {{ '' if d.access=='public' else 'warn' }}">{{ d.access }}</span></td>
+  <td><small>{{ d.chunk_strategy }} · {{ d.chunk_size }}/{{ d.chunk_overlap }}</small></td><td>{{ d.chunk_count }}</td>
+  <td>{% if d.notes %}<span class="tag bad">{{ d.notes }}</span>{% endif %}</td></tr>{% endfor %}</table></section>
+<section class="card"><h2>Add a document</h2>
+<form method="post" action="/admin/rag/c/{{ name }}/upload" enctype="multipart/form-data" class="grid-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label>Title <input name="title"></label>
+  <label>Access level <select name="access">{% for a in access %}<option>{{ a }}</option>{% endfor %}</select></label>
+  <label>File (.md, .txt, .pdf) <input type="file" name="file" accept=".md,.txt,.pdf"></label>
+  <label>Chunking <select name="strategy">{% for k, v in strategies.items() %}<option value="{{ k }}" {{ 'selected' if k=='paragraph' }}>{{ k }}: {{ v }}</option>{% endfor %}</select></label>
+  <label>Chunk size (chars) <input name="size" type="number" value="600"></label><label>Overlap (chars) <input name="overlap" type="number" value="80"></label>
+  <label class="full">…or paste text <textarea name="text" rows="6"></textarea></label>
+  <div class="actions full"><button class="btn">Chunk, embed and store</button></div></form></section>
+<form method="post" action="/admin/rag/c/{{ name }}/delete" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn danger">Delete this collection</button></form>
+{% endblock %}

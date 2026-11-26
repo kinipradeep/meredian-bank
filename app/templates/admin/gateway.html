@@ -1,0 +1,51 @@
+{% extends "admin/base_admin.html" %}{% block title %}LLM gateway{% endblock %}
+{% block content %}
+<div class="row-head"><h1>LLM gateway <span class="tag">LiteLLM</span> {% if up %}<span class="tag good">online</span>{% else %}<span class="tag bad">offline</span>{% endif %}</h1>
+{% if cfg.public_url %}<a class="btn ghost" href="{{ cfg.public_url }}/ui" target="_blank" rel="noopener">Open LiteLLM UI ↗</a>{% endif %}</div>
+<p class="muted">Every real model call goes through LiteLLM: one OpenAI-compatible API for Claude, OpenAI, Groq, Gemini and Ollama, with provider keys stored in the gateway, virtual keys with budgets, and spend logs. Agents use it through the <a href="/admin/providers">“LiteLLM gateway” endpoint</a> ({{ using }} agent(s) right now): set an agent's model to a gateway model name below.</p>
+{% if err %}<div class="flash error">{{ err }}</div>{% endif %}
+
+<section class="card"><h2>Models in the gateway</h2>
+<table><tr><th>Name (use on agents)</th><th>Provider model</th><th>API base</th><th>Cost / 1M tokens (in · out)</th><th></th></tr>
+{% for m in models %}<tr><td><b class="mono">{{ m.name }}</b></td><td class="mono">{{ m.model }}</td><td><small>{{ m.api_base }}</small></td>
+<td><small>{% if m.input_cost %}${{ '%.2f'|format(m.input_cost*1e6) }} · ${{ '%.2f'|format((m.output_cost or 0)*1e6) }}{% endif %}</small></td>
+<td class="nowrap"><form method="post" action="/admin/gateway/test" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="model" value="{{ m.name }}"><button class="btn small ghost">Test</button></form>
+{% if m.db_model and m.id %}<form method="post" action="/admin/gateway/models/{{ m.id }}/delete" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small danger">Remove</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">{{ 'No models yet. Add one below.' if up else 'Gateway offline: start the litellm service (docker compose up -d litellm).' }}</td></tr>{% endfor %}</table></section>
+
+<div class="two">
+<section class="card"><h2>Add a model</h2>
+<form method="post" action="/admin/gateway/models" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label>Name agents will use <input name="name" required placeholder="claude-haiku"></label>
+  <label>LiteLLM model string <input name="model" required placeholder="anthropic/claude-haiku-5-5" list="presets"></label>
+  <label class="full">Provider API key (stored encrypted in the gateway) <input name="api_key" type="password" autocomplete="off"></label>
+  <label class="full">API base (only for Ollama / self-hosted) <input name="api_base" placeholder="http://ollama:11434"></label>
+  <div class="actions full"><button class="btn">Add to gateway</button></div></form>
+<datalist id="presets">{% for n, m, k, b in presets %}<option value="{{ m }}">{{ n }}</option>{% endfor %}</datalist>
+<table><tr><th>Suggested name</th><th>Model string</th></tr>{% for n, m, k, b in presets %}<tr><td class="mono">{{ n }}</td><td class="mono"><small>{{ m }}{% if b %} · base {{ b }}{% endif %}</small></td></tr>{% endfor %}</table></section>
+
+<section class="card"><h2>Virtual keys</h2>
+<p class="muted">Give the range its own key with a budget, so a classroom can never overspend. Tick “use for agents” to switch the app to the new key.</p>
+<form method="post" action="/admin/gateway/keys" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label>Alias <input name="alias" required value="range-agents"></label><label>Max budget (USD) <input name="max_budget" placeholder="10"></label>
+  <label>Models (comma-separated, blank = all) <input name="models"></label><label>Expires in <input name="duration" placeholder="30d"></label>
+  <label class="check full"><input type="checkbox" name="use_for_agents" checked> Use this key for all agents</label>
+  <div class="actions full"><button class="btn">Generate key</button></div></form>
+<table><tr><th>Alias</th><th>Key</th><th class="r">Spend</th><th class="r">Budget</th><th></th></tr>
+{% for k in keys %}<tr><td>{{ k.key_alias or '' }}</td><td class="mono"><small>{{ k.key_name or (k.token or '')[:10] }}</small></td><td class="r">${{ '%.4f'|format(k.spend or 0) }}</td><td class="r">{{ k.max_budget or '∞' }}</td>
+<td>{% if k.token %}<form method="post" action="/admin/gateway/keys/delete" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="token" value="{{ k.token }}"><button class="btn small danger">Delete</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="5" class="muted">No virtual keys. Agents use the master key.</td></tr>{% endfor %}</table></section>
+</div>
+
+<section class="card"><h2>Recent gateway requests (spend logs)</h2>
+<table><tr><th>When</th><th>Model</th><th>Key</th><th class="r">Tokens</th><th class="r">Cost</th><th>Status</th></tr>
+{% for l in logs %}<tr><td class="nowrap"><small>{{ (l.startTime or '')[:19]|replace('T',' ') }}</small></td><td class="mono"><small>{{ l.model_group or l.model }}</small></td>
+<td><small>{{ (l.metadata or {}).get('user_api_key_alias') or '' }}</small></td><td class="r">{{ l.total_tokens }}</td><td class="r">${{ '%.5f'|format(l.spend or 0) }}</td><td><small>{{ l.status or '' }}</small></td></tr>
+{% else %}<tr><td colspan="6" class="muted">No requests logged yet.</td></tr>{% endfor %}</table></section>
+
+<section class="card"><h2>Connection</h2>
+<form method="post" action="/admin/gateway/settings" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label>Internal URL <input name="url" value="{{ cfg.url }}"></label><label>Public URL (for the LiteLLM UI link) <input name="public_url" value="{{ cfg.public_url }}" placeholder="https://gateway.example.com"></label>
+  <label>Master key {% if master %}<small class="muted">current: {{ master }}</small>{% endif %}<input name="master_key" type="password" autocomplete="off" placeholder="leave blank to keep"></label>
+  <div class="actions full"><button class="btn">Save</button></div></form></section>
+{% endblock %}

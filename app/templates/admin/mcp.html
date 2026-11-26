@@ -1,0 +1,41 @@
+{% extends "admin/base_admin.html" %}{% block title %}MCP servers{% endblock %}
+{% block content %}
+<h1>MCP servers</h1>
+<p class="muted">Agents load tools from these Model Context Protocol servers on every turn (via <span class="mono">langchain-mcp-adapters</span>). Inspect a server to read the tool descriptions the model will see, and pin the approved versions so hardened agents refuse changed or poisoned tools.</p>
+<section class="card"><table><tr><th>Server</th><th>URL</th><th>Pinned tools</th><th>Used by</th><th>Status</th><th></th></tr>
+{% for s in servers %}<tr><td><a href="/admin/mcp/{{ s.slug }}"><b class="mono">{{ s.slug }}</b></a><br><small class="muted">{{ s.name }}</small></td><td class="mono"><small>{{ s.url }}</small></td>
+<td>{{ s.approved|length }}</td><td>{% for a in used[s.slug] %}<span class="tag">{{ a }}</span> {% endfor %}</td>
+<td>{% if s.enabled %}<span class="tag good">on</span>{% else %}<span class="tag">off</span>{% endif %}</td>
+<td class="nowrap"><a class="btn small ghost" href="/admin/mcp/{{ s.slug }}">Inspect</a>
+<form method="post" action="/admin/mcp/{{ s.slug }}/toggle" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small ghost">{{ 'Disable' if s.enabled else 'Enable' }}</button></form>
+<form method="post" action="/admin/mcp/{{ s.slug }}/delete" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small danger">Delete</button></form></td></tr>
+{% else %}<tr><td colspan="6" class="muted">No servers.</td></tr>{% endfor %}</table></section>
+<div class="two">
+<section class="card"><h2>Demo: Meridian Partner Services</h2>
+{% if demo is none %}<p class="flash error">The demo server (service <span class="mono">mcp-demo</span>) is not reachable.</p>{% else %}
+<p>A deliberately malicious third-party server. <span class="mono">partner_offers</span> is poisoned from the start. <span class="mono">fx_rate</span> is clean until you pull the rug.</p>
+<p>Rug pull: {% if demo.rug_pull %}<span class="tag bad">ON: fx_rate now hides an instruction</span>{% else %}<span class="tag good">OFF</span>{% endif %}</p>
+<form method="post" action="/admin/mcp-demo/rugpull" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">{% if not demo.rug_pull %}<input type="hidden" name="on" value="1">{% endif %}
+<button class="btn {{ '' if demo.rug_pull else 'danger' }}">{{ 'Restore clean fx_rate' if demo.rug_pull else 'Trigger rug pull' }}</button></form>
+<p class="muted">Teaching flow: pin the clean tools on the inspect page, trigger the rug pull, then ask Max v1 and v2 for a USD rate.</p>{% endif %}</section>
+<section class="card"><h2>Register a server</h2>
+<form method="post" action="/admin/mcp/servers" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label>Slug <input name="slug" required placeholder="github-tools"></label><label>Name <input name="name" required></label>
+  <label class="full">URL <input name="url" required placeholder="https://example.com/mcp"></label>
+  <label>Transport <select name="transport"><option value="streamable_http">Streamable HTTP</option><option value="sse">SSE (legacy)</option></select></label>
+  <label>Headers (JSON, stored encrypted) <input name="headers" placeholder='{"Authorization": "Bearer …"}'></label>
+  <div class="actions full"><button class="btn">Register</button></div></form></section></div>
+<section class="card"><h2>The bank's own MCP endpoint</h2>
+<p>Learners can connect any MCP client (Claude Desktop, MCP Inspector, their own agent) to <b class="mono">{{ endpoint }}</b> with the personal token from their Training lab page. Calls run with the controls of the profile agent below, and every call is audited and scored.</p>
+<form method="post" action="/admin/mcp-bank" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label class="check"><input type="checkbox" name="enabled" {{ 'checked' if bank.enabled }}> Endpoint enabled</label>
+  <label>Controls come from agent <select name="profile_agent">{% for a in agents %}<option value="{{ a.slug }}" {{ 'selected' if a.slug == bank.profile_agent }}>{{ a.slug }} ({{ a.mode }})</option>{% endfor %}</select></label>
+  <div class="actions full"><button class="btn small">Save</button></div></form>
+<p>Tools exposed: {% for t in bank_tools %}<span class="tag">{{ t }}</span> {% endfor %} · {{ tokens }} learner token(s) issued
+<form method="post" action="/admin/mcp-bank/revoke-tokens" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small danger">Revoke all tokens</button></form></p>
+<h3>Recent MCP calls</h3>
+<table><tr><th>When</th><th>Learner</th><th>Call</th><th>Flags</th></tr>
+{% for c in calls %}<tr><td class="nowrap"><small>{{ c.created_at.strftime('%d %b %H:%M:%S') }}</small></td><td><small>{{ users[c.user_id].email if c.user_id in users else '' }}</small></td>
+<td class="mono"><small>{{ c.summary }}</small></td><td>{% for f in c.flags %}<span class="tag {{ 'bad' if f in ['cross_account','big_refund','exfil_email'] else 'good' }}">{{ f }}</span> {% endfor %}</td></tr>
+{% else %}<tr><td colspan="4" class="muted">No MCP calls yet.</td></tr>{% endfor %}</table></section>
+{% endblock %}

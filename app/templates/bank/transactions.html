@@ -1,0 +1,19 @@
+{% extends "base_bank.html" %}
+{% block title %}Transactions · Meridian Bank{% endblock %}
+{% block content %}
+<h1>Transactions</h1>
+<section class="panel">
+  <table class="txns">
+    <tr><th>Date</th><th>Description</th><th>Category</th><th>Reference</th><th class="r">Amount</th><th>Status</th><th></th></tr>
+    {% for t in txns %}<tr><td>{{ t.posted_at.strftime('%d %b %Y') }}</td><td>{{ t.description }}</td><td>{{ t.category }}</td><td class="mono">{{ t.txn_ref }}</td>
+      <td class="r {{ 'neg' if t.amount < 0 else 'pos' }}">{{ t.amount|inr }}</td><td><span class="status {{ t.status }}">{{ t.status }}</span></td>
+      <td>{% if t.amount < 0 and t.status == 'posted' %}<a class="small" href="/disputes">Dispute</a>{% endif %}</td></tr>{% endfor %}
+  </table>
+</section>
+{% if refunds %}
+<section class="panel"><h2>Your refund requests</h2>
+  <table class="txns"><tr><th>#</th><th>Transaction</th><th class="r">Amount</th><th>Status</th></tr>
+  {% for r in refunds %}<tr><td>{{ r.id }}</td><td class="mono">{{ r.txn_ref }}</td><td class="r">{{ r.amount|inr }}</td><td><span class="status {{ r.status }}">{{ r.status.replace('_',' ') }}</span></td></tr>{% endfor %}
+  </table></section>
+{% endif %}
+{% endblock %}

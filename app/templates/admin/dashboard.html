@@ -1,0 +1,23 @@
+{% extends "admin/base_admin.html" %}{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="stats">
+  <div><b>{{ stats.users }}</b><span>users</span></div><div><b>{{ stats.agents }}</b><span>live agents</span></div>
+  <div><b>{{ stats.documents }}</b><span>documents</span></div><div><b>{{ stats.chats_today }}</b><span>chat turns today</span></div>
+  <div><b>{{ "{:,}".format(stats.tokens_today) }}</b><span>tokens today</span></div>
+  <div class="{{ 'warn' if stats.pending_refunds }}"><b>{{ stats.pending_refunds }}</b><span>refunds awaiting approval</span></div>
+  <div class="{{ 'bad' if stats.exfil }}"><b>{{ stats.exfil }}</b><span>emails sent by agents</span></div>
+</div>
+<div class="two">
+  <section class="card"><h2>Recent activity</h2>
+    <table><tr><th>When</th><th>User</th><th>Agent</th><th>Event</th><th>Flags</th></tr>
+    {% for r in recent %}<tr><td class="nowrap">{{ r.created_at.strftime('%d %b %H:%M') }}</td><td>{{ users[r.user_id].email if r.user_id in users else '' }}</td>
+      <td>{{ agents[r.agent_id].slug if r.agent_id in agents else '' }}</td><td>{{ r.event }}<br><small class="muted">{{ r.summary[:70] }}</small></td>
+      <td>{% for f in r.flags %}<span class="tag {{ 'bad' if f in ['secret_leak','hr_leak','big_refund','cross_account','exfil_email'] else 'good' }}">{{ f }}</span> {% endfor %}</td></tr>{% endfor %}
+    </table><a href="/admin/activity">Full activity log →</a></section>
+  <section class="card"><h2>Leaderboard</h2>
+    <table><tr><th>Learner</th><th>Solved</th><th>Points</th></tr>
+    {% for name, email, pts, n in board %}<tr><td>{{ name or email }}</td><td>{{ n }}</td><td><b>{{ pts }}</b></td></tr>{% else %}<tr><td colspan="3" class="muted">No solves yet.</td></tr>{% endfor %}
+    </table></section>
+</div>
+{% endblock %}

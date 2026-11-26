@@ -1,0 +1,25 @@
+{% extends "admin/base_admin.html" %}{% block title %}Tracing{% endblock %}
+{% block content %}
+<div class="row-head"><h1>Tracing <span class="tag">Langfuse</span> {% if up %}<span class="tag good">online</span>{% else %}<span class="tag bad">offline</span>{% endif %} {% if cfg.enabled %}<span class="tag good">tracing on</span>{% else %}<span class="tag">tracing off</span>{% endif %}</h1>
+{% if cfg.public_url %}<a class="btn ghost" href="{{ cfg.public_url }}/project/{{ cfg.project_id }}/traces" target="_blank" rel="noopener">Open Langfuse ↗</a>{% endif %}</div>
+<p class="muted">With tracing on, every LangGraph run is sent to Langfuse: each node, the exact prompt, retrieved context, tool calls and results, tokens, latency and cost, grouped by learner and session. Use it to replay an attack step by step.</p>
+{% if err %}<div class="flash error">{{ err }}</div>{% endif %}
+<section class="card"><h2>Recent traces in Langfuse</h2>
+<table><tr><th>When (UTC)</th><th>Agent</th><th>Learner</th><th>Tags</th><th class="r">Latency</th><th class="r">Cost</th><th></th></tr>
+{% for t in traces %}<tr><td class="nowrap"><small>{{ t.time }}</small></td><td class="mono"><small>{{ t.name }}</small></td><td><small>{{ t.user }}</small></td>
+<td>{% for g in t.tags %}<span class="tag">{{ g }}</span> {% endfor %}</td><td class="r">{{ '%.1f'|format(t.latency or 0) }}s</td><td class="r">{% if t.cost %}${{ '%.5f'|format(t.cost) }}{% endif %}</td>
+<td>{% if t.url %}<a class="btn small ghost" href="{{ t.url }}" target="_blank" rel="noopener">Open ↗</a>{% endif %}</td></tr>
+{% else %}<tr><td colspan="7" class="muted">{{ 'No traces yet.' if up else 'Langfuse is not reachable. Start it with: docker compose --profile observability up -d' }}</td></tr>{% endfor %}</table></section>
+<section class="card"><h2>Latest turns recorded by the range</h2>
+<table><tr><th>When</th><th>Agent</th><th>Summary</th><th>Tokens</th><th>Langfuse</th></tr>
+{% for r in local %}<tr><td class="nowrap"><small>{{ r.created_at.strftime('%d %b %H:%M:%S') }}</small></td><td class="mono"><small>{{ agents[r.agent_id].slug if r.agent_id in agents else '' }}</small></td>
+<td><small>{{ r.summary[:90] }}</small></td><td>{{ r.input_tokens + r.output_tokens }}</td><td>{% if r.detail.get('langfuse_url') %}<a href="{{ r.detail.langfuse_url }}" target="_blank" rel="noopener">trace ↗</a>{% else %}<small class="muted">–</small>{% endif %}</td></tr>{% endfor %}</table></section>
+<section class="card"><h2>Connection</h2>
+<form method="post" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label class="check full"><input type="checkbox" name="enabled" {{ 'checked' if cfg.enabled }}> Send traces to Langfuse</label>
+  <label>Internal host <input name="host" value="{{ cfg.host }}"></label><label>Public URL (for links) <input name="public_url" value="{{ cfg.public_url }}" placeholder="https://langfuse.example.com"></label>
+  <label>Project ID <input name="project_id" value="{{ cfg.project_id }}"></label><label>Public key <input name="public_key" value="{{ cfg.public_key }}"></label>
+  <label>Secret key {% if secret %}<small class="muted">current: {{ secret }}</small>{% endif %}<input name="secret_key" type="password" autocomplete="off" placeholder="leave blank to keep"></label>
+  <div class="actions full"><button class="btn">Save</button></div></form>
+<p class="muted">The docker-compose setup creates the Langfuse project and keys automatically from LANGFUSE_INIT_* in .env, so these fields are pre-filled.</p></section>
+{% endblock %}

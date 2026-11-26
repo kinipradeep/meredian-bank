@@ -1,0 +1,230 @@
+# Meridian Bank · AI Security Range
+#   core:            docker compose up -d --build
+#   + Langfuse:      docker compose --profile observability up -d
+#   + LLM Guard:     docker compose --profile guard up -d
+#   everything:      docker compose --profile observability --profile guard up -d --build
+#   + local models:  add --profile ollama
+
+x-langfuse-env: &langfuse-env
+  DATABASE_URL: postgresql://range:${POSTGRES_PASSWORD}@db:5432/langfuse
+  SALT: ${LANGFUSE_SALT:?set LANGFUSE_SALT}
+  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:?set LANGFUSE_ENCRYPTION_KEY (64 hex chars)}
+  TELEMETRY_ENABLED: "false"
+  CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+  CLICKHOUSE_URL: http://clickhouse:8123
+  CLICKHOUSE_USER: clickhouse
+  CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?set CLICKHOUSE_PASSWORD}
+  CLICKHOUSE_CLUSTER_ENABLED: "false"
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+  LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_PASSWORD:?set MINIO_PASSWORD}
+  LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+  LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+  LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+  LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
+  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_PASSWORD}
+  LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: https://minio.${DOMAIN}
+  LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_AUTH: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+  NEXTAUTH_URL: https://langfuse.${DOMAIN}
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: range
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: airange
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U range -d airange"]
+      interval: 5s
+      retries: 20
+
+  chroma:   # vector database; same image as the app so client and server versions match
+    build: .
+    image: airange-app
+    restart: unless-stopped
+    command: ["chroma", "run", "--host", "0.0.0.0", "--port", "8000", "--path", "/data/chroma"]
+    volumes: [chromadata:/data/chroma]
+    user: "0"
+
+  app:      # FastAPI + LangGraph agent runtime + admin portal + the bank's MCP endpoint (/mcp/)
+    build: .
+    image: airange-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://range:${POSTGRES_PASSWORD}@db:5432/airange
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+      LITELLM_URL: http://litellm:4000
+      LITELLM_PUBLIC_URL: https://gateway.${DOMAIN}
+      LANGFUSE_HOST: http://langfuse-web:3000
+      LANGFUSE_PUBLIC_URL: https://langfuse.${DOMAIN}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_INIT_PROJECT_SECRET_KEY:-}
+      LANGFUSE_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID:-meridian-range}
+      LLMGUARD_URL: http://llm-guard:8000
+      LLMGUARD_TOKEN: ${LLM_GUARD_TOKEN:-}
+      MCP_DEMO_URL: http://mcp-demo:8765/mcp
+    depends_on:
+      db: {condition: service_healthy}
+      chroma: {condition: service_started}
+      mcp-demo: {condition: service_started}
+    volumes: [models:/data/models]
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8080/healthz"]
+      interval: 15s
+      retries: 10
+
+  mcp-demo: # deliberately malicious third-party MCP server (internal only)
+    build: .
+    image: airange-app
+    restart: unless-stopped
+    command: ["python", "-m", "app.mcp_servers.partner"]
+    environment:
+      MCP_DEMO_CONTROL_TOKEN: ${MCP_DEMO_CONTROL_TOKEN:-}
+
+  litellm:  # LLM gateway: Claude, OpenAI, Groq, Gemini, Ollama behind one API
+    image: ghcr.io/berriai/litellm:${LITELLM_TAG:-main-stable}
+    restart: unless-stopped
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      DATABASE_URL: postgresql://range:${POSTGRES_PASSWORD}@db:5432/litellm
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY (must start with sk-)}
+      LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:?set LITELLM_SALT_KEY (never change it after first start)}
+      STORE_MODEL_IN_DB: "True"
+      UI_USERNAME: ${LITELLM_UI_USERNAME:-admin}
+      UI_PASSWORD: ${LITELLM_UI_PASSWORD:?set LITELLM_UI_PASSWORD}
+    volumes: [./deploy/litellm/config.yaml:/app/config.yaml:ro]
+    depends_on:
+      db: {condition: service_healthy}
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+    depends_on: [app]
+
+  # ---------------------------------------------------------------- profile: guard
+  llm-guard:
+    image: laiyer/llm-guard-api:${LLM_GUARD_TAG:-latest}
+    restart: unless-stopped
+    profiles: ["guard"]
+    environment:
+      AUTH_TOKEN: ${LLM_GUARD_TOKEN:-}
+      APP_WORKERS: "1"
+      LOG_LEVEL: INFO
+    volumes:
+      - ./deploy/llm-guard/scanners.yml:/home/user/app/config/scanners.yml:ro
+      - hfcache:/home/user/.cache/huggingface
+
+  # ---------------------------------------------------------------- profile: observability (Langfuse v4)
+  langfuse-web:
+    image: docker.langfuse.com/langfuse/langfuse:${LANGFUSE_TAG:-4}
+    restart: unless-stopped
+    profiles: ["observability"]
+    depends_on:
+      db: {condition: service_healthy}
+      clickhouse: {condition: service_healthy}
+      minio: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    environment:
+      <<: *langfuse-env
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:?set LANGFUSE_NEXTAUTH_SECRET}
+      AUTH_DISABLE_SIGNUP: "true"
+      LANGFUSE_INIT_ORG_ID: meridian
+      LANGFUSE_INIT_ORG_NAME: Meridian Range
+      LANGFUSE_INIT_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID:-meridian-range}
+      LANGFUSE_INIT_PROJECT_NAME: Meridian Bank Range
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:?set LANGFUSE_INIT_PROJECT_PUBLIC_KEY}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_INIT_PROJECT_SECRET_KEY:?set LANGFUSE_INIT_PROJECT_SECRET_KEY}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:?set LANGFUSE_INIT_USER_EMAIL}
+      LANGFUSE_INIT_USER_NAME: Range Admin
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:?set LANGFUSE_INIT_USER_PASSWORD}
+
+  langfuse-worker:
+    image: docker.langfuse.com/langfuse/langfuse-worker:${LANGFUSE_TAG:-4}
+    restart: unless-stopped
+    profiles: ["observability"]
+    depends_on:
+      db: {condition: service_healthy}
+      clickhouse: {condition: service_healthy}
+      minio: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    environment: *langfuse-env
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.12
+    restart: unless-stopped
+    profiles: ["observability"]
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    volumes: [clickhouse_data:/var/lib/clickhouse, clickhouse_logs:/var/log/clickhouse-server]
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      retries: 10
+      start_period: 1s
+
+  minio:
+    image: cgr.dev/chainguard/minio
+    restart: unless-stopped
+    profiles: ["observability"]
+    entrypoint: sh
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    volumes: [minio_data:/data]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      retries: 10
+      start_period: 1s
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    profiles: ["observability"]
+    command: --requirepass ${REDIS_PASSWORD} --maxmemory-policy noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 3s
+      retries: 10
+
+  # ---------------------------------------------------------------- profile: ollama (optional local models)
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    profiles: ["ollama"]
+    volumes: [ollama:/root/.ollama]
+
+volumes:
+  pgdata: {}
+  chromadata: {}
+  models: {}
+  caddydata: {}
+  hfcache: {}
+  ollama: {}
+  clickhouse_data: {}
+  clickhouse_logs: {}
+  minio_data: {}

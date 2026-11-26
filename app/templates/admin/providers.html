@@ -1,0 +1,30 @@
+{% extends "admin/base_admin.html" %}{% block title %}Model endpoints{% endblock %}
+{% block content %}
+<h1>Model endpoints</h1>
+<p class="muted">Agents call models through these endpoints. Use the <b>LiteLLM gateway</b> for real models: add provider keys and models on the <a href="/admin/gateway">LLM gateway</a> page, then use a gateway model name here or on an agent. Keys are encrypted at rest with ENCRYPTION_KEY and never shown again after saving. Use "Test" to check a key and model.</p>
+{% for p in providers %}
+<section class="card">
+  <form method="post" action="/admin/providers/{{ p.id }}" class="grid-form">
+    <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+    <div class="row-head"><h2>{{ p.name }} <span class="tag">{{ p.kind }}</span> {% if masked[p.id] %}<span class="tag good">key {{ masked[p.id] }}</span>{% elif p.kind != 'mock' %}<span class="tag warn">no key</span>{% endif %}</h2>
+      <label class="check"><input type="checkbox" name="enabled" {{ 'checked' if p.enabled }}> Enabled</label></div>
+    <label>Display name <input name="name" value="{{ p.name }}"></label>
+    <label>Base URL <input name="base_url" value="{{ p.base_url }}" placeholder="(gateway: from LLM gateway settings)"></label>
+    <label>Default model <input name="default_model" value="{{ p.default_model }}"></label>
+    <label>Suggested models <input name="models_hint" value="{{ p.models_hint }}"></label>
+    {% if p.kind != 'mock' %}<label>API key <input name="api_key" type="password" autocomplete="off" placeholder="{{ 'Leave blank to keep the current key' if masked[p.id] else 'Paste key' }}"></label>
+    <label class="check"><input type="checkbox" name="clear_key"> Remove stored key</label>{% endif %}
+    <p class="muted full">{{ p.notes }}</p>
+    <div class="actions full"><button class="btn">Save</button></div>
+  </form>
+  <form method="post" action="/admin/providers/{{ p.id }}/test" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn ghost">Test connection</button></form>
+</section>
+{% endfor %}
+<section class="card"><h2>Add a provider</h2>
+  <form method="post" action="/admin/providers" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+    <label>Slug <input name="slug" required placeholder="mistral"></label><label>Name <input name="name" required placeholder="Mistral"></label>
+    <label>Kind <select name="kind">{% for k in kinds %}<option>{{ k }}</option>{% endfor %}</select></label>
+    <label>Base URL <input name="base_url" placeholder="https://api.example.com/v1"></label>
+    <label>Default model <input name="default_model"></label>
+    <div class="actions full"><button class="btn">Add</button></div></form></section>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "admin/base_admin.html" %}{% block title %}{{ doc.title }}{% endblock %}
+{% block content %}
+<div class="row-head"><h1>{{ doc.title }}</h1><a class="btn ghost" href="/admin/rag/c/{{ doc.collection }}">← {{ doc.collection }}</a></div>
+<p class="muted">{{ chunks|length }} chunks · {{ doc.chunk_strategy }} · size {{ doc.chunk_size }} · overlap {{ doc.chunk_overlap }} · access <b>{{ doc.access }}</b></p>
+<div class="two">
+<section class="card"><h2>1. Chunks</h2><p class="muted">Click a chunk to see its stored embedding.</p>
+  {% for c in chunks %}<a class="chunk c{{ c.index % 6 }} {{ 'sel' if c.index == sel }}" href="?chunk={{ c.index }}">
+    <span class="chunk-h">#{{ c.index }} · {{ c.chars }} chars · ~{{ c.approx_tokens }} tokens</span><pre>{{ c.text }}</pre></a>{% endfor %}</section>
+<section class="card"><h2>2. Embedding of chunk #{{ sel }}</h2>
+  {% if vec %}<p>{{ vec.dims }} dimensions · L2 norm {{ vec.norm }} · min {{ vec.min }} · max {{ vec.max }}</p>
+  <div class="bars">{% for v in vec.head %}<span class="bar {{ 'neg' if v < 0 }}" style="height:{{ (v|abs * 400)|round(0)|int + 2 }}px" title="dim {{ loop.index0 }}: {{ v }}"></span>{% endfor %}</div>
+  <p class="muted">First {{ vec.head|length }} values. Each bar is one dimension; similar meanings produce similar patterns.</p>
+  <pre class="small">{{ vec.head }}</pre>
+  {% else %}<p class="muted">No stored vector for this chunk (re-chunk to regenerate).</p>{% endif %}
+  <h2>3. Re-chunk and re-embed</h2>
+  <form method="post" action="/admin/rag/doc/{{ doc.id }}/rechunk" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+    <label>Strategy <select name="strategy">{% for k in strategies %}<option {{ 'selected' if k == doc.chunk_strategy }}>{{ k }}</option>{% endfor %}</select></label>
+    <label>Access <select name="access">{% for a in access %}<option {{ 'selected' if a == doc.access }}>{{ a }}</option>{% endfor %}</select></label>
+    <label>Size <input type="number" name="size" value="{{ doc.chunk_size }}"></label><label>Overlap <input type="number" name="overlap" value="{{ doc.chunk_overlap }}"></label>
+    <div class="actions full"><button class="btn">Apply</button></div></form>
+  <form method="post" action="/admin/rag/doc/{{ doc.id }}/delete" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn danger small">Delete document and vectors</button></form>
+</section></div>
+<section class="card"><h2>Original text</h2><pre>{{ doc.content }}</pre></section>
+{% endblock %}

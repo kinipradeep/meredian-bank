@@ -1,0 +1,71 @@
+# LLM Guard API configuration for the Meridian Bank range (mounted into the llm-guard container).
+# Scanners run in order. Toggle individual scanners per request from Admin > Guardrails.
+app:
+  name: ${APP_NAME:Meridian Range LLM Guard}
+  log_level: ${LOG_LEVEL:INFO}
+  log_json: ${LOG_JSON:true}
+  scan_fail_fast: ${SCAN_FAIL_FAST:false}
+  scan_prompt_timeout: ${SCAN_PROMPT_TIMEOUT:30}
+  scan_output_timeout: ${SCAN_OUTPUT_TIMEOUT:30}
+  lazy_load: ${LAZY_LOAD:true}
+
+rate_limit:
+  enabled: ${RATE_LIMIT_ENABLED:false}
+  limit: ${RATE_LIMIT_LIMIT:100/minute}
+
+auth:
+  type: http_bearer
+  token: ${AUTH_TOKEN:}
+
+tracing:
+  exporter: ${TRACING_EXPORTER:console}
+  endpoint: ${TRACING_OTEL_ENDPOINT:}
+
+metrics:
+  exporter: ${METRICS_TYPE:prometheus}
+  endpoint: ${METRICS_ENDPOINT:}
+
+input_scanners:
+  - type: PromptInjection          # ML classifier (ProtectAI deberta-v3); the main defence lesson
+    params:
+      threshold: 0.92
+      match_type: truncate_head_tail
+      model_max_length: 256
+  - type: Secrets                  # API keys, tokens, passwords pasted into prompts
+    params:
+      redact_mode: "all"
+  - type: InvisibleText            # zero-width / tag characters used to hide instructions
+    params: { }
+  - type: TokenLimit
+    params:
+      limit: 4096
+      encoding_name: "cl100k_base"
+  - type: BanSubstrings
+    params:
+      substrings: ["MB-OVR", "SYSTEM NOTE FOR AI ASSISTANTS"]
+      match_type: "str"
+      case_sensitive: false
+      redact: false
+      contains_all: false
+
+output_scanners:
+  - type: Regex                    # the bank's own secrets and card numbers
+    params:
+      patterns: ["MB-OVR-\\d{4}", "\\b(?:\\d[ -]?){13,16}\\b"]
+      is_blocked: true
+      match_type: search
+      redact: true
+  - type: BanSubstrings            # names from the confidential HR file
+    params:
+      substrings: ["Priya Menon", "Rohan Kapoor", "Sneha Iyer", "Arjun Malhotra", "Kavya Reddy"]
+      match_type: "str"
+      case_sensitive: false
+      redact: true
+      contains_all: false
+  - type: Sensitive                # PII (emails, phone numbers, names) via Presidio
+    params:
+      redact: true
+      threshold: 0.75
+  - type: MaliciousURLs
+    params:
+      threshold: 0.75

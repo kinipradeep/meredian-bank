@@ -1,0 +1,132 @@
+"""Google OAuth sign-in, a dev-only login, and request dependencies."""
+from datetime import datetime, timezone
+
+from authlib.integrations.starlette_client import OAuth, OAuthError
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
+
+from .config import get_settings
+from .db import get_db
+from .models import AuditLog, User
+from .security import verify_csrf
+from .seed.seed import provision_customer
+from .web import templates
+
+router = APIRouter()
+oauth = OAuth()
+_s = get_settings()
+if _s.google_client_id:
+    oauth.register(name="google", client_id=_s.google_client_id, client_secret=_s.google_client_secret,
+                   server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+                   client_kwargs={"scope": "openid email profile"})
+
+
+class LoginRequired(Exception):
+    pass
+
+
+class AdminRequired(Exception):
+    pass
+
+
+def current_user(request: Request, db: Session = Depends(get_db)) -> User | None:
+    uid = request.session.get("uid")
+    if not uid:
+        return None
+    user = db.get(User, uid)
+    if not user or not user.is_active:
+        request.session.clear()
+        return None
+    return user
+
+
+def require_user(user: User | None = Depends(current_user)) -> User:
+    if not user:
+        raise LoginRequired()
+    return user
+
+
+def require_admin(user: User = Depends(require_user)) -> User:
+    if not user.is_admin:
+        raise AdminRequired()
+    return user
+
+
+def _login(request: Request, db: Session, email: str, name: str = "", picture: str = "", role: str | None = None) -> User:
+    s = get_settings()
+    email = email.lower().strip()
+    user = db.query(User).filter_by(email=email).first()
+    if not user:
+        user = User(email=email, name=name or email.split("@")[0], picture=picture,
+                    role="admin" if email in s.admin_email_list else "customer")
+        db.add(user)
+        db.commit()
+    if role and s.dev_login_enabled:
+        user.role = role
+    if email in s.admin_email_list and user.role != "admin":
+        user.role = "admin"
+    user.name = name or user.name
+    user.picture = picture or user.picture
+    user.last_login = datetime.now(timezone.utc)
+    db.commit()
+    provision_customer(db, user)
+    db.add(AuditLog(user_id=user.id, event="login", summary=f"{email} signed in"))
+    db.commit()
+    request.session.clear()
+    request.session["uid"] = user.id
+    return user
+
+
+@router.get("/login")
+def login_page(request: Request, error: str = ""):
+    s = get_settings()
+    return templates.TemplateResponse(request, "login.html", {
+        "google_enabled": bool(s.google_client_id), "dev_login": s.dev_login_enabled, "error": error})
+
+
+@router.get("/auth/google")
+async def auth_google(request: Request):
+    s = get_settings()
+    if not s.google_client_id:
+        return RedirectResponse("/login?error=Google+sign-in+is+not+configured", status_code=303)
+    return await oauth.google.authorize_redirect(request, s.base_url.rstrip("/") + "/auth/callback")
+
+
+@router.get("/auth/callback")
+async def auth_callback(request: Request, db: Session = Depends(get_db)):
+    s = get_settings()
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except OAuthError as e:
+        return RedirectResponse(f"/login?error=Sign-in+failed:+{e.error}", status_code=303)
+    info = token.get("userinfo") or {}
+    email = (info.get("email") or "").lower()
+    if not email or not info.get("email_verified", False):
+        return RedirectResponse("/login?error=Your+Google+email+is+not+verified", status_code=303)
+    if s.allowed_domain_list and email.split("@")[-1] not in s.allowed_domain_list and email not in s.admin_email_list:
+        return RedirectResponse("/login?error=This+email+domain+is+not+allowed", status_code=303)
+    existing = db.query(User).filter_by(email=email).first()
+    if existing and not existing.is_active:
+        return RedirectResponse("/login?error=Your+account+is+disabled", status_code=303)
+    _login(request, db, email, info.get("name", ""), info.get("picture", ""))
+    return RedirectResponse("/", status_code=303)
+
+
+@router.post("/auth/dev")
+def dev_login(request: Request, email: str = Form(...), role: str = Form("customer"), csrf: str = Form(""),
+              db: Session = Depends(get_db)):
+    if not get_settings().dev_login_enabled:
+        return RedirectResponse("/login?error=Dev+login+is+disabled", status_code=303)
+    verify_csrf(request, csrf)
+    if role not in ("customer", "staff", "hr", "admin"):
+        role = "customer"
+    _login(request, db, email, email.split("@")[0].replace(".", " ").title(), role=role)
+    return RedirectResponse("/", status_code=303)
+
+
+@router.post("/logout")
+def logout(request: Request, csrf: str = Form("")):
+    verify_csrf(request, csrf)
+    request.session.clear()
+    return RedirectResponse("/login", status_code=303)

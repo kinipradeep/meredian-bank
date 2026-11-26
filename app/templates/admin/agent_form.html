@@ -1,0 +1,52 @@
+{% extends "admin/base_admin.html" %}{% block title %}{{ 'New agent' if is_new else agent.name }}{% endblock %}
+{% block content %}
+<div class="row-head"><h1>{{ 'Deploy a new agent' if is_new else agent.name }}</h1>
+  {% if not is_new %}<div><a class="btn ghost" href="/lab/agent/{{ agent.slug }}">Open in the bank site</a>
+  <form method="post" action="/admin/agents/{{ agent.id }}/delete" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn danger">Delete</button></form></div>{% endif %}</div>
+<form method="post" action="/admin/agents/save" class="card grid-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">{% if not is_new %}<input type="hidden" name="id" value="{{ agent.id }}">{% endif %}
+  <h2 class="full">Identity</h2>
+  <label>Name <input name="name" value="{{ agent.name }}" required></label>
+  <label>Slug (URL id) <input name="slug" value="{{ agent.slug }}" placeholder="auto from name"></label>
+  <label class="full">Description (shown to learners) <input name="description" value="{{ agent.description or "" }}"></label>
+  <label>Where it appears <select name="surface">{% for s in ['support','refunds','lab'] %}<option {{ 'selected' if agent.surface == s }}>{{ s }}</option>{% endfor %}</select></label>
+  <label>Mode label <select name="mode">{% for s in ['vulnerable','hardened'] %}<option {{ 'selected' if agent.mode == s }}>{{ s }}</option>{% endfor %}</select></label>
+  <label>Sort order <input name="sort_order" type="number" value="{{ agent.sort_order }}"></label>
+  <div class="checks"><label class="check"><input type="checkbox" name="enabled" {{ 'checked' if agent.enabled }}> Live</label>
+    <label class="check"><input type="checkbox" name="xray_visible" {{ 'checked' if agent.xray_visible }}> Learners can see X-ray</label></div>
+
+  <h2 class="full">Model</h2>
+  <label>Provider <select name="provider_id">{% for p in providers %}<option value="{{ p.id }}" {{ 'selected' if agent.provider_id == p.id }}>{{ p.name }}{{ '' if p.enabled else ' (disabled)' }}</option>{% endfor %}</select></label>
+  <label>Model (blank = provider default) <input name="model" value="{{ agent.model or "" }}" list="model-hints"></label>
+  <datalist id="model-hints">{% for p in providers %}{% for m in p.models_hint.split(',') if m %}<option value="{{ m.strip() }}">{% endfor %}{% endfor %}</datalist>
+
+  <h2 class="full">Prompt and knowledge</h2>
+  <label class="full">System prompt <textarea name="system_prompt" rows="9">{{ agent.system_prompt }}</textarea></label>
+  <label class="full">Greeting <input name="greeting" value="{{ agent.greeting or "" }}"></label>
+  <label>Knowledge collection <select name="collection"><option value="">(none)</option>{% for c in collections %}<option {{ 'selected' if agent.collection == c }}>{{ c }}</option>{% endfor %}</select></label>
+
+  <h2 class="full">Tools</h2>
+  <div class="full toolgrid">{% for t in tools %}<label class="check tool"><input type="checkbox" name="tools" value="{{ t.name }}" {{ 'checked' if t.name in agent.tools }}>
+    <span><b class="mono">{{ t.name }}</b><br><small class="muted">{{ t.description }}</small></span></label>{% endfor %}</div>
+
+  <h2 class="full">MCP servers</h2>
+  <p class="full muted">Tools from these servers are loaded at the start of every turn, through <span class="mono">langchain-mcp-adapters</span>. Manage servers under <a href="/admin/mcp">MCP servers</a>.</p>
+  <div class="full toolgrid">{% for m in mcp_servers %}<label class="check tool"><input type="checkbox" name="mcp_servers" value="{{ m.slug }}" {{ 'checked' if m.slug in (agent.mcp_servers or []) }}>
+    <span><b class="mono">{{ m.slug }}</b>{% if not m.enabled %} <span class="tag">off</span>{% endif %}<br><small class="muted">{{ m.name }}</small></span></label>{% else %}<p class="muted">No MCP servers registered.</p>{% endfor %}</div>
+
+  <h2 class="full">Security controls</h2>
+  <p class="full muted">Each control switches on behaviour in one node of the LangGraph pipeline (input_guard → retrieve → model ⇄ tools → output_guard). Leave them off for the vulnerable version.</p>
+  {% for group, keys in control_groups %}
+  <h3 class="full">{{ group }}</h3>
+  <div class="full toolgrid">
+  {% for k in keys %}{% set d = defaults[k] %}{% set v = agent.controls.get(k, d) %}
+    {% if d is sameas true or d is sameas false %}
+      <label class="check"><input type="checkbox" name="c_{{ k }}" {{ 'checked' if v }}> <span class="mono">{{ k }}</span></label>
+    {% else %}
+      <label><span class="mono">{{ k }}</span> <input name="c_{{ k }}" value="{{ '' if v is none else v }}" placeholder="{{ 'none' if d is none else d }}"></label>
+    {% endif %}
+  {% endfor %}</div>
+  {% endfor %}
+  <div class="actions full"><button class="btn">{{ 'Deploy agent' if is_new else 'Save and redeploy' }}</button></div>
+</form>
+{% endblock %}

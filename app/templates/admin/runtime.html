@@ -1,0 +1,18 @@
+{% extends "admin/base_admin.html" %}{% block title %}Agent runtime{% endblock %}
+{% block content %}
+<h1>Agent runtime <span class="tag">LangGraph</span></h1>
+<p class="muted">Every agent is compiled into the same LangGraph state graph. Its controls decide what each node does, so vulnerable and hardened agents differ only in configuration, which is the point of the lab.</p>
+<section class="card"><div class="flow">
+{% for n, d in [('input_guard','Regex guard · LLM Guard input scan · may block'),('retrieve','Chroma search · permission filter · chunk quarantine · context isolation'),('model','LLM via LiteLLM gateway (or offline model) · bound to native and MCP tools'),('tools','Native bank tools · MCP tools · result scanning · loop back to model'),('output_guard','Secret and prompt-leak filter · LLM Guard output scan')] %}
+<div class="node"><b class="mono">{{ n }}</b><small>{{ d }}</small></div>{% if not loop.last %}<div class="arrow">{{ '⇄' if n == 'model' else '→' }}</div>{% endif %}{% endfor %}
+</div>
+<details><summary>Mermaid source (paste into mermaid.live)</summary><pre>{{ mermaid }}</pre></details></section>
+<section class="card"><h2>What each agent switches on</h2>
+<table><tr><th>Agent</th><th>Endpoint · model</th><th>input_guard</th><th>retrieve</th><th>tools</th><th>output_guard</th></tr>
+{% for a in agents %}{% set c = a.controls or {} %}<tr><td><a href="/admin/agents/{{ a.id }}">{{ a.slug }}</a> <span class="tag {{ 'bad' if a.mode=='vulnerable' else 'good' }}">{{ a.mode }}</span>{% if not a.enabled %} <span class="tag">off</span>{% endif %}</td>
+<td><small>{{ a.provider.name if a.provider else '–' }} · <span class="mono">{{ a.model }}</span></small></td>
+<td>{% for k in ['input_guard','llm_guard_input'] %}{% if c.get(k) %}<span class="tag good">{{ k }}</span> {% endif %}{% endfor %}</td>
+<td>{% if a.collection and c.get('auto_retrieve', true) %}<span class="tag">{{ a.collection }}</span> {% endif %}{% for k in ['permission_aware_retrieval','context_isolation','llm_guard_context'] %}{% if c.get(k) %}<span class="tag good">{{ k }}</span> {% endif %}{% endfor %}</td>
+<td>{% for t in a.tools %}<span class="tag">{{ t }}</span> {% endfor %}{% for m in a.mcp_servers or [] %}<span class="tag warn">mcp:{{ m }}</span> {% endfor %}{% for k in ['on_behalf_of','email_allowlist','mcp_scan_descriptions','mcp_pin_tools'] %}{% if c.get(k) %}<span class="tag good">{{ k }}</span> {% endif %}{% endfor %}{% if c.get('refund_cap') %}<span class="tag good">cap {{ c.refund_cap }}</span>{% endif %}</td>
+<td>{% for k in ['output_filter','llm_guard_output'] %}{% if c.get(k) %}<span class="tag good">{{ k }}</span> {% endif %}{% endfor %}</td></tr>{% endfor %}</table></section>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "admin/base_admin.html" %}{% block title %}Browse {{ name }}{% endblock %}
+{% block content %}
+<div class="row-head"><h1>Vectors in <span class="mono">{{ name }}</span></h1><a class="btn ghost" href="/admin/rag/c/{{ name }}">← Collection</a></div>
+<p class="muted">Raw rows as stored in the vector database: id, text, metadata and the embedding. {{ total }} rows.</p>
+<section class="card"><table><tr><th>ID</th><th>Metadata</th><th>Text</th><th>Embedding (first 16 dims)</th></tr>
+{% for r in rows %}<tr><td class="mono nowrap">{{ r.id }}</td>
+  <td><small>{{ r.meta.title }}<br>access=<b>{{ r.meta.access }}</b> · chunk {{ r.meta.chunk_index }}</small></td>
+  <td><small>{{ r.text[:220] }}{{ '…' if r.text|length > 220 }}</small></td>
+  <td>{% if r.vec %}<div class="bars mini">{% for v in r.vec.head %}<span class="bar {{ 'neg' if v < 0 }}" style="height:{{ (v|abs * 200)|round(0)|int + 2 }}px"></span>{% endfor %}</div><small class="muted">{{ r.vec.dims }}d · norm {{ r.vec.norm }}</small>{% endif %}</td></tr>{% endfor %}
+</table>
+<div class="pager">{% if page > 0 %}<a href="?page={{ page-1 }}">← Previous</a>{% endif %} Page {{ page+1 }} {% if (page+1)*per < total %}<a href="?page={{ page+1 }}">Next →</a>{% endif %}</div></section>
+{% endblock %}

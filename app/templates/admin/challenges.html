@@ -1,0 +1,12 @@
+{% extends "admin/base_admin.html" %}{% block title %}Challenges{% endblock %}
+{% block content %}
+<div class="row-head"><h1>Challenges</h1><form method="post" action="/admin/challenges/reset" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn danger">Reset all progress</button></form></div>
+<section class="card"><table><tr><th>Challenge</th><th>Detector</th><th>Points</th><th>Solves</th><th>Status</th><th></th></tr>
+{% for c in rows %}<tr><td><b>{{ c.title }}</b><br><small class="muted">{{ c.domain }}</small></td><td class="mono">{{ c.detector }}</td><td>{{ c.points }}</td><td>{{ counts.get(c.id, 0) }}</td>
+  <td>{% if c.enabled %}<span class="tag good">on</span>{% else %}<span class="tag">off</span>{% endif %}</td>
+  <td><form method="post" action="/admin/challenges/{{ c.id }}/toggle" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small ghost">Toggle</button></form></td></tr>{% endfor %}</table></section>
+<section class="card"><h2>Recent solves</h2><table><tr><th>When</th><th>Learner</th><th>Challenge</th><th>Agent</th><th>Evidence</th></tr>
+{% for s in solves %}<tr><td class="nowrap">{{ s.solved_at.strftime('%d %b %H:%M') }}</td><td>{{ users[s.user_id].email if s.user_id in users else '' }}</td><td>{{ chs[s.challenge_id].title }}</td>
+  <td class="mono"><small>{{ agents[s.agent_id].slug if s.agent_id in agents else '' }}</small></td><td><small>{{ s.evidence[:160] }}</small></td></tr>
+{% else %}<tr><td colspan="5" class="muted">No solves yet.</td></tr>{% endfor %}</table></section>
+{% endblock %}

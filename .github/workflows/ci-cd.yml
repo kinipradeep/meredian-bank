@@ -1,0 +1,62 @@
+name: CI / CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Unit tests
+        run: pytest -q
+      - name: Validate docker compose (all profiles)
+        run: |
+          scripts/gen-env.sh ci.example.com ci@example.com
+          docker compose --profile observability --profile guard --profile ollama config --quiet
+      - name: Build image
+        run: docker build -t airange-app:ci .
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check deploy secrets
+        id: check
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+        run: |
+          if [ -z "$VM_HOST" ]; then
+            echo "VM_HOST secret not set: skipping deploy. See README > Continuous deployment."; echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Deploy over SSH
+        if: steps.check.outputs.skip != 'true'
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+          APP_DIR: ${{ vars.APP_DIR || '/opt/airange' }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          if [ -n "$VM_KNOWN_HOSTS" ]; then printf '%s\n' "$VM_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else ssh-keyscan -p "${VM_PORT:-22}" "$VM_HOST" > ~/.ssh/known_hosts; fi
+          ssh -i ~/.ssh/deploy_key -p "${VM_PORT:-22}" "${VM_USER:-deploy}@$VM_HOST" \
+            "APP_DIR='$APP_DIR' SHA='${{ github.sha }}' bash -s" < scripts/deploy.sh

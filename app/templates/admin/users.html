@@ -1,0 +1,13 @@
+{% extends "admin/base_admin.html" %}{% block title %}Users{% endblock %}
+{% block content %}
+<h1>Users</h1>
+<p class="muted">Role decides what permission-aware retrieval lets a user see: customer (public), staff (+staff), hr (+hr), admin (everything and the admin panel).</p>
+<section class="card"><table><tr><th>User</th><th>Customer ID</th><th>Last login</th><th>Role and status</th><th></th></tr>
+{% for u in users %}<tr><td><b>{{ u.name }}</b><br><small class="muted">{{ u.email }}</small></td><td class="mono">{{ u.customer_id }}</td>
+  <td class="nowrap">{{ u.last_login.strftime('%d %b %H:%M') if u.last_login else '—' }}</td>
+  <td><form method="post" action="/admin/users/{{ u.id }}" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+    <select name="role">{% for r in roles %}<option {{ 'selected' if u.role == r }}>{{ r }}</option>{% endfor %}</select>
+    <label class="check"><input type="checkbox" name="active" {{ 'checked' if u.is_active }}> active</label> <button class="btn small">Save</button></form></td>
+  <td><form method="post" action="/admin/users/{{ u.id }}/reset-bank" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small ghost">Reset bank data</button></form></td></tr>{% endfor %}
+</table></section>
+{% endblock %}
