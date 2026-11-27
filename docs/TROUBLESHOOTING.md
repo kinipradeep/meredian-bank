@@ -18,3 +18,13 @@ Start with the logs: `journalctl -u <service> -n 100 --no-pager`, where `<servic
 | Forgot the admin password | – | `sudo -u airange bash -c 'cd /opt/airange && set -a && . ./.env && .venv/bin/python -m app.cli create-admin --email you@example.com'` |
 | GitHub Actions deploy fails at SSH | secrets missing/wrong | re-check `VM_HOST`, `VM_USER=airange`, `VM_SSH_KEY` (full private key) and `VM_KNOWN_HOSTS` |
 | Deploy says "systemd unit files changed" | units are only installed by the installer | re-run the install command as root |
+
+## LLM gateway shows "LiteLLM offline" / "Unable to find Prisma binaries"
+LiteLLM's Prisma client was never generated, so `airange-litellm` crash-loops. Generate it and restart:
+```bash
+systemctl stop airange-litellm
+sudo -u airange bash -c 'cd /opt/litellm/venv/lib/python3*/site-packages/litellm/proxy && HOME=/var/lib/airange/litellm PATH=/opt/litellm/venv/bin:$PATH prisma generate --schema schema.prisma'
+systemctl start airange-litellm
+curl -s http://127.0.0.1:4000/health/liveliness   # "I'm alive!" after 1-2 minutes
+```
+Installs from 27 Nov 2026 onwards do this automatically.

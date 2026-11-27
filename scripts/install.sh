@@ -132,6 +132,9 @@ install -d -o airange -g airange /opt/litellm
 [ -d /opt/litellm/venv ] || as_app python3 -m venv /opt/litellm/venv
 as_app /opt/litellm/venv/bin/pip install -q --upgrade pip
 as_app /opt/litellm/venv/bin/pip install -q "litellm[proxy,extra_proxy]==$LITELLM_VERSION"
+# LiteLLM's database layer needs the Prisma client generated once per install (it fails to start otherwise).
+as_app sh -c "cd /opt/litellm/venv/lib/python3*/site-packages/litellm/proxy && HOME=$DATA/litellm PATH=/opt/litellm/venv/bin:\$PATH prisma generate --schema schema.prisma" \
+  || echo "WARNING: 'prisma generate' failed; the LiteLLM gateway will not start. See docs/TROUBLESHOOTING.md."
 
 if [ "$WITH_GUARD" = 1 ]; then
   step "LLM Guard API (CPU; downloads ~2 GB of models on first scan)"
