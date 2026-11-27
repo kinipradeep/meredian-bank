@@ -143,7 +143,7 @@ if [ "$WITH_GUARD" = 1 ]; then
   [ -d /opt/llm-guard/venv ] || as_app python3 -m venv /opt/llm-guard/venv
   as_app /opt/llm-guard/venv/bin/pip install -q --upgrade pip
   as_app sh -c "cd /opt/llm-guard/src/llm_guard_api && PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cpu /opt/llm-guard/venv/bin/pip install -q '.[cpu]'"
-  as_app /opt/llm-guard/venv/bin/python -m spacy download -q en_core_web_sm || true
+  as_app /opt/llm-guard/venv/bin/python -m spacy download en_core_web_sm || true
 fi
 
 if [ "$WITH_OLLAMA" = 1 ]; then
