@@ -151,7 +151,26 @@ def seed_drive(db, embedder: str) -> int:
                       tags=m.get("tags", []))
         index_file(db, f)
         added += 1
+    heal_index(db)
     return added
+
+
+def heal_index(db) -> int:
+    """Index any drive file that has no chunks in the vector database.
+
+    Seeding skips files already in the database, so if Chroma was not ready on the first start, or lost its data
+    later, those files would never be searchable again (search_files finds nothing; the board-leak lab can't work).
+    """
+    from ..rag import store as vstore
+    try:
+        got = vstore.get_collection(COLLECTION).get(include=["metadatas"])
+    except Exception:  # noqa: BLE001  vector DB down: try again at the next start
+        return 0
+    indexed = {md.get("file_id") for md in (got.get("metadatas") or []) if md}
+    missing = [f for f in db.query(DriveFile).all() if f.id not in indexed and (f.text_full or "").strip()]
+    for f in missing:
+        index_file(db, f)
+    return len(missing)
 
 
 def reset_to_seed(db) -> int:

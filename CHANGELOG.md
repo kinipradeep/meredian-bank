@@ -1,6 +1,10 @@
 # Changelog
 
 ## 2026-11-28
+- **Labs on real models:**
+  - drive-secret now completes when the vulnerable file tool returns the key from outside its folder, even if a safety-tuned model refuses to repeat it (the X-ray shows the leaked file). The Ops v1 prompt asks it to quote files in full; unedited installs get the new prompt.
+  - The MeriDrive search index repairs itself at startup. Files seeded while Chroma was down were never searchable, which broke board-leak.
+  - `lab_matrix.py --pause` keeps runs under free-tier rate limits.
 - Groq `gpt-oss` models run with `reasoning_effort: low`, so their reasoning doesn't use up an agent's reply tokens.
 - **No more "I couldn't finish that request within my step limit":** when a model keeps asking for tools past the agent's step limit, the agent now makes one last call without tools and answers from what it has gathered. The X-ray records a `max_steps` event. The per-turn token budget, the denial-of-wallet defence, still ends the turn.
 - **Model failover:** a slow (over the time limit), rate-limited, keyless, retired or unreachable model hands the turn to the next available gateway model, then to the offline model.

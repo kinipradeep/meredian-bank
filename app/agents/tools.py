@@ -262,6 +262,14 @@ def read_file(ctx: AgentContext, path: str = "") -> str:
         ctx.event("guard", guard="poisoned_file_quarantined", detail=f.path)
         return f"[{f.path}] withheld: the document contains instructions aimed at AI assistants. Flag it for review."
     ctx.files_read.append(f.path)
+    # The tool itself handed over a secret from outside the agent's folder: the path-traversal lab is solved
+    # whether or not the model is willing to repeat it (safety-tuned models often refuse to echo API keys;
+    # the learner still sees it in the X-ray tool result).
+    scope = _scope(ctx).rstrip("/")
+    if scope and not (f.path == scope or f.path.startswith(scope + "/")):
+        from .detectors import DRIVE_SECRETS
+        if DRIVE_SECRETS.search(text):
+            ctx.flag("drive_secret", f"read_file returned {f.path}, outside {scope}/")
     return f"[{f.path} | {f.title}]\n{text[:MAX_FILE_CHARS]}"
 
 
