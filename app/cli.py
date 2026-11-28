@@ -5,6 +5,10 @@
   python -m app.cli create-admin --email you@example.com --keep-existing   # no change if it already has one
   ADMIN_PASSWORD='...' python -m app.cli create-admin --email you@example.com   # keeps it out of `ps`
   python -m app.cli remove-password --email you@example.com           # Google sign-in only from now on
+  python -m app.cli set-agent-model --model claude-haiku              # every agent -> LiteLLM gateway model
+  python -m app.cli set-agent-model --model groq-llama-70b --agents aria-v1,refund-v1
+  python -m app.cli set-agent-model --model mock-gullible-1 --endpoint mock   # back to the offline model
+  python -m app.cli set-agent-model --list                            # show what each agent uses now
 """
 import argparse
 import os
@@ -30,6 +34,11 @@ def main(argv=None) -> int:
     c.add_argument("--keep-existing", action="store_true")
     r = sub.add_parser("remove-password", help="remove a local password (Google sign-in only)")
     r.add_argument("--email", required=True)
+    m = sub.add_parser("set-agent-model", help="point agents at an endpoint + model (default: LiteLLM gateway)")
+    m.add_argument("--model", default="", help="gateway model name, e.g. claude-haiku, gemini-flash-lite, groq-llama-70b")
+    m.add_argument("--endpoint", default="gateway", help="endpoint slug: gateway (default), mock, ollama-direct")
+    m.add_argument("--agents", default="", help="comma-separated agent slugs; blank = all agents")
+    m.add_argument("--list", action="store_true", help="only show the current endpoint/model per agent")
     a = ap.parse_args(argv)
 
     from . import models  # noqa: F401  (registers tables)
@@ -40,6 +49,8 @@ def main(argv=None) -> int:
     migrate()
     db = SessionLocal()
     try:
+        if a.cmd == "set-agent-model":
+            return _set_agent_model(db, a)
         email = a.email.lower().strip()
         user = db.query(User).filter_by(email=email).first()
         if a.cmd == "remove-password":
@@ -75,6 +86,38 @@ def main(argv=None) -> int:
         return 0
     finally:
         db.close()
+
+
+def _set_agent_model(db, a) -> int:
+    from .models import Agent, AuditLog, Provider
+    q = db.query(Agent).order_by(Agent.sort_order, Agent.slug)
+    if a.list:
+        for ag in q:
+            p = db.get(Provider, ag.provider_id) if ag.provider_id else None
+            print(f"{ag.slug:<24} {(p.slug if p else '-'):<14} {ag.model}")
+        return 0
+    if not a.model:
+        print("--model is required (or use --list).", file=sys.stderr)
+        return 2
+    endpoint = db.query(Provider).filter_by(slug=a.endpoint).first()
+    if not endpoint:
+        print(f"No endpoint '{a.endpoint}'. Known: {', '.join(p.slug for p in db.query(Provider))}", file=sys.stderr)
+        return 2
+    wanted = [s.strip() for s in a.agents.split(",") if s.strip()]
+    agents = q.filter(Agent.slug.in_(wanted)).all() if wanted else q.all()
+    missing = set(wanted) - {ag.slug for ag in agents}
+    if missing:
+        print(f"Unknown agent(s): {', '.join(sorted(missing))}", file=sys.stderr)
+        return 2
+    endpoint.enabled = True
+    for ag in agents:
+        ag.provider_id, ag.model = endpoint.id, a.model
+    db.add(AuditLog(event="admin", summary=f"set {len(agents)} agent(s) to {a.endpoint}/{a.model} (cli)"))
+    db.commit()
+    print(f"{len(agents)} agent(s) now use {a.endpoint} / {a.model}:")
+    for ag in agents:
+        print(f"  {ag.slug}")
+    return 0
 
 
 if __name__ == "__main__":

@@ -4,3 +4,4 @@ __pycache__/
 backups/
 .pytest_cache/
 .venv/
+providers.env

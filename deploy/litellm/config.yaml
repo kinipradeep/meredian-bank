@@ -1,6 +1,39 @@
-# LiteLLM gateway. Models and provider keys are added from Admin > LLM gateway (stored in Postgres,
-# encrypted with LITELLM_SALT_KEY). You can also pre-define models here; keys come from the environment.
-model_list: []
+# LiteLLM gateway.
+# Models below read their keys from /etc/airange/providers.env (see deploy/providers.env.example).
+# The model_name is what you put on an agent (Admin > Agents, endpoint "LiteLLM gateway").
+# You can still add more models from Admin > LLM gateway; those are stored in Postgres, encrypted with
+# LITELLM_SALT_KEY. Don't add a UI model with the same name as one here, or LiteLLM will load-balance
+# between the two.
+model_list:
+  # ---- Claude (ANTHROPIC_API_KEY)
+  - model_name: claude-haiku
+    litellm_params:
+      model: anthropic/claude-haiku-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: claude-sonnet
+    litellm_params:
+      model: anthropic/claude-sonnet-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # ---- Gemini (GEMINI_API_KEY)
+  - model_name: gemini-flash-lite
+    litellm_params:
+      model: gemini/gemini-3.1-flash-lite
+      api_key: os.environ/GEMINI_API_KEY
+
+  # ---- Groq (GROQ_API_KEY)
+  - model_name: groq-llama-8b
+    litellm_params:
+      model: groq/llama-3.1-8b-instant
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: groq-llama-70b
+    litellm_params:
+      model: groq/llama-3.3-70b-versatile
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: groq-gpt-oss-20b
+    litellm_params:
+      model: groq/openai/gpt-oss-20b
+      api_key: os.environ/GROQ_API_KEY
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

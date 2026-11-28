@@ -8,6 +8,8 @@ User=airange
 Group=airange
 WorkingDirectory=/var/lib/airange/litellm
 EnvironmentFile=/opt/airange/.env
+# Provider API keys (Claude, Gemini, Groq). Root-only file, loaded by this service alone. "-" = optional.
+EnvironmentFile=-/etc/airange/providers.env
 Environment=STORE_MODEL_IN_DB=True HOME=/var/lib/airange/litellm
 # LiteLLM reads DATABASE_URL / UI_USERNAME / UI_PASSWORD; map them from the range's .env names.
 ExecStart=/bin/sh -c 'DATABASE_URL="$LITELLM_DATABASE_URL" UI_USERNAME="$LITELLM_UI_USERNAME" UI_PASSWORD="$LITELLM_UI_PASSWORD" exec /opt/litellm/venv/bin/litellm --config /opt/airange/deploy/litellm/config.yaml --host 127.0.0.1 --port 4000'
