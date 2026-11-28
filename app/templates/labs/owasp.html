@@ -1,0 +1,18 @@
+{% extends "base_bank.html" %}
+{% block title %}Labs by OWASP risk · Meridian Bank{% endblock %}
+{% block content %}
+<p><a href="/labs">← All labs</a></p>
+<h1>Labs by OWASP risk</h1>
+<p class="muted">Every lab is mapped to the <a href="{{ source }}" target="_blank" rel="noopener">{{ edition }}</a>. The first category on a lab is its main risk; the others are risks it also shows. Ticks mark labs you've completed.</p>
+<div class="owasp-grid">
+{% for c in cats %}
+<section class="panel owasp-cat {{ 'gap' if not c.primary and not c.secondary }}" id="{{ c.id }}">
+  <div class="owasp-cat-head"><span class="owasp-chip primary">{{ c.id }}</span><h2>{{ c.name }}</h2></div>
+  <p class="small">{{ c.summary }}</p>
+  {% if c.primary %}<h3>Main risk in</h3><ul class="owasp-labs">{% for s in c.primary %}{% set l = labs.get(s) %}{% if l %}<li class="{{ 'done' if l.id in mine }}"><a href="/labs/{{ s }}">{{ l.title }}</a>{% if l.id in mine %} ✓{% endif %}</li>{% endif %}{% endfor %}</ul>{% endif %}
+  {% if c.secondary %}<h3>Also shown in</h3><ul class="owasp-labs secondary">{% for s in c.secondary %}{% set l = labs.get(s) %}{% if l %}<li class="{{ 'done' if l.id in mine }}"><a href="/labs/{{ s }}">{{ l.title }}</a>{% if l.id in mine %} ✓{% endif %}</li>{% endif %}{% endfor %}</ul>{% endif %}
+  {% if not c.primary and not c.secondary %}<p class="muted small">No lab covers this yet.</p>{% endif %}
+</section>
+{% endfor %}
+</div>
+{% endblock %}

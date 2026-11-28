@@ -3,7 +3,7 @@
 {% block content %}
 <div class="ctf-head">
   <div><h1>{{ w.event.name }}</h1>
-  <p class="muted">Guided hands-on labs: attack Meridian Bank's AI agents, then see how the hardened version stops you. Every lab has step-by-step guidance and a worked answer. Work through the modules in order, or jump to what interests you.</p></div>
+  <p class="muted">Guided hands-on labs: attack Meridian Bank's AI agents, then see how the hardened version stops you. Every lab has step-by-step guidance and a worked answer. Work through the modules in order, or jump to what interests you. Each lab is mapped to the <a href="/labs/owasp">{{ owasp_edition }}</a>.</p></div>
   <div class="score-box"><b>{{ mine|length }}/{{ total }}</b><span>labs completed</span>
     <div class="progress"><span style="width:{{ (100 * mine|length / (total or 1))|round|int }}%"></span></div></div>
 </div>
@@ -16,6 +16,7 @@
   {% for c in items %}<li class="{{ 'done' if c.id in mine }}">
     <a href="/labs/{{ c.slug }}"><b>{{ c.title }}</b></a>
     <span class="diff d-{{ c.difficulty }}">{{ c.difficulty }}</span>
+    {% set ow = owasp_for(c.slug) %}{% if ow %}<a class="owasp-chip small" href="/labs/owasp#{{ ow.primary.id }}" title="{{ ow.primary.name }}">{{ ow.primary.id }}</a>{% endif %}
     {% if c.id in mine %}<span class="tag good">✓ completed</span>{% elif c.id in answered %}<span class="tag">answer viewed</span>{% endif %}
     <div class="muted small">{{ (c.objectives or [c.description])[0] }}</div>
   </li>{% endfor %}</ol>

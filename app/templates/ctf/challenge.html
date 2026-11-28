@@ -6,6 +6,7 @@
 <section class="panel">
   <div class="ctf-top"><span class="pts">{{ ch.points }} pts</span><span class="diff d-{{ ch.difficulty }}">{{ ch.difficulty }}</span><span class="tag">{{ ch.category }}</span>{% if solve %}<span class="tag good">Solved{% if solve.first_blood %} · first blood 🩸{% endif %}</span>{% endif %}</div>
   <h1>{{ ch.title }}</h1>
+  {% set ow = owasp_for(ch.slug) %}{% if ow %}<p>{% for c in ow.all %}<a class="owasp-chip {{ 'primary' if loop.first }} small" href="/labs/owasp#{{ c.id }}" title="{{ c.summary }}">{{ c.id }} {{ c.name }}</a> {% endfor %}</p>{% endif %}
   <p>{{ ch.description }}</p>
   <p class="muted small">{{ ch.domain }}</p>
   {% if launch %}<a class="btn gold" href="{{ launch }}">Launch the target agent →</a>{% endif %}

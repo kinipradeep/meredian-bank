@@ -50,6 +50,16 @@ def labs_board(request: Request, db: Session = Depends(get_db), user: User = Dep
     return board(request, db, user)
 
 
+@router.get("/labs/owasp")
+def labs_owasp(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+    """Every lab grouped by the OWASP Top 10 for LLM Applications category it covers."""
+    from ..seed import owasp
+    chs = {c.slug: c for c in db.query(Challenge).filter_by(enabled=True)} if _visible(db, user) else {}
+    mine = {s.challenge_id for s in db.query(ChallengeSolve).filter_by(user_id=user.id)}
+    return templates.TemplateResponse(request, "labs/owasp.html", _ctx(
+        request, db, user, cats=owasp.coverage(), labs=chs, mine=mine, edition=owasp.EDITION, source=owasp.SOURCE))
+
+
 @router.get("/labs/{slug}")
 def labs_lab(slug: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
     return challenge(slug, request, db, user)

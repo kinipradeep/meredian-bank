@@ -1,6 +1,10 @@
 # Changelog
 
 ## 2026-11-28
+- **OWASP Top 10 for LLM Applications 2026 in the range:**
+  - every lab page shows its categories, why the risk matters, and (after completion or the answer) how v2 mitigates it;
+  - the board shows chips, and `/labs/owasp` shows coverage by category;
+  - a test keeps every lab mapped.
 - **Refusal fallback:** when a real model refuses a lab's attack, or fails, on the lab's target agent, the turn is redone on the built-in local model.
   - Learners see the local model as *Meridian Lite (local small model)*; the name is configurable.
   - Hardened agents keep their refusals.

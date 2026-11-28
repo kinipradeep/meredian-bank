@@ -8,6 +8,13 @@
   <h1>{{ ch.title }}</h1>
   <p>{{ ch.description }}</p>
   {% if ch.objectives %}<h2>You will learn to</h2><ul>{% for o in ch.objectives %}<li>{{ o }}</li>{% endfor %}</ul>{% endif %}
+  {% set ow = owasp_for(ch.slug) %}{% if ow %}
+  <div class="owasp-card">
+    <div class="owasp-head"><span class="owasp-label">{{ ow.edition }}</span>
+      {% for c in ow.all %}<a class="owasp-chip {{ 'primary' if loop.first }}" href="/labs/owasp#{{ c.id }}" title="{{ c.summary }}">{{ c.id }} {{ c.name }}</a>{% endfor %}</div>
+    <p class="owasp-def"><b>{{ ow.primary.id }} {{ ow.primary.name }}:</b> {{ ow.primary.summary }}</p>
+    <h3>Why it matters</h3><p>{{ ow.why }}</p>
+  </div>{% endif %}
   <div class="lab-actions">{% if launch %}<a class="btn gold" href="{{ launch }}">1 · Try it on the vulnerable agent →</a>{% endif %}
   {% if hardened %}<a class="btn ghost" href="{{ hardened }}">2 · Repeat on {{ hardened_name }} →</a>{% endif %}</div>
   {% if flash %}<div class="alert {{ 'ok' if flash.kind=='ok' else 'error' }}">{{ flash.msg }}</div>{% endif %}
@@ -29,7 +36,9 @@
     <button class="btn small ghost">Show the worked answer</button></form> <span class="muted small">Try the steps first: you learn more by getting there yourself.</span>
   {% else %}<p class="muted">{{ why }}</p>{% endif %}
 
-  {% if solve or answered %}<h2>Why the hardened version stops it</h2><p>{{ ch.defence }}</p>{% endif %}
+  {% if solve or answered %}<h2>How the hardened version mitigates it{% if ow %} <span class="owasp-chip primary small">{{ ow.primary.id }}</span>{% endif %}</h2>
+    {% if ow %}<p>{{ ow.mitigation }}</p>{% else %}<p>{{ ch.defence }}</p>{% endif %}
+  {% elif ow %}<h2>How the hardened version mitigates it</h2><p class="muted">Shown once you complete the lab or open the worked answer, so it doesn't give the attack away.</p>{% endif %}
   <p class="muted small">{{ ch.domain }}</p>
   <div class="lab-nav">{% if prev %}<a href="/labs/{{ prev.slug }}">← {{ prev.title }}</a>{% else %}<span></span>{% endif %}{% if next_lab %}<a href="/labs/{{ next_lab.slug }}">{{ next_lab.title }} →</a>{% endif %}</div>
 </section>
@@ -37,6 +46,7 @@
   <ol class="small"><li>Open the vulnerable agent and attack it. Watch the <b>X-ray</b> panel to see what the model received and did.</li>
   <li>Stuck? Reveal the guided steps one at a time, then the worked answer.</li>
   <li>Repeat the same attack on the hardened agent and use the X-ray to see which control stopped you.</li></ol>
-  <p class="muted small">Steps and answers are free. Your trainer can see which labs you completed and where you needed help.</p></aside>
+  <p class="muted small">Steps and answers are free. Your trainer can see which labs you completed and where you needed help.</p>
+  <p class="small"><a href="/labs/owasp">All labs by OWASP risk →</a></p></aside>
 </div>
 {% endblock %}

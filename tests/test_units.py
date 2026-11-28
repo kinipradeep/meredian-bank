@@ -283,3 +283,14 @@ def test_privacy_notice_names_the_model_provider():
     assert _vendor("llama3.2:3b", P(kind="openai_compat", slug="ollama-direct", base_url="http://127.0.0.1:11434/v1")) is None
     assert _vendor("openai/gpt-oss-20b", P(kind="openai_compat", slug="groq", base_url="https://api.groq.com/openai/v1")) == "Groq"
     assert "my-custom" in _vendor("my-custom", gw)
+
+
+def test_every_lab_is_mapped_to_owasp():
+    from app.seed.lab_content import LABS as LAB_TEXT
+    from app.seed.owasp import CATEGORIES, LABS, coverage, for_lab
+    assert set(LAB_TEXT) == set(LABS), set(LAB_TEXT) ^ set(LABS)
+    for slug, (ids, why, mitigation) in LABS.items():
+        assert ids and all(i in CATEGORIES for i in ids) and len(set(ids)) == len(ids), slug
+        assert len(why) > 60 and len(mitigation) > 60, slug
+    assert for_lab("drive-secret")["primary"]["id"] == "LLM10"
+    assert sum(len(c["primary"]) for c in coverage()) == len(LABS)

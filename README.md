@@ -161,6 +161,14 @@ sudo -u airange .venv/bin/python -m app.cli set-agent-model --model groq-gpt-oss
 
 **Day-to-day:** `journalctl -u airange-app -f` (or another service name) for logs; `systemctl restart airange-<name>` to restart; `/opt/airange/scripts/backup.sh` to back up by hand.
 
+## OWASP Top 10 mapping
+Every lab is mapped to the **OWASP Top 10 for LLM Applications 2026**:
+- **On each lab page:** a card with the lab's main risk and any secondary risks, a one-line definition, and *why it matters* in a bank. After the lab is completed (or its answer opened), a section shows *how the hardened version mitigates it*.
+- **Labs board:** each lab's main category as a chip.
+- **`/labs/owasp`:** all 10 categories, with the labs covering each and your progress.
+
+The mapping and texts live in `app/seed/owasp.py`.
+
 ## Model failover
 If an agent's model is slow, rate-limited, missing its key, retired or down, the turn moves to the next model in the failover list. If every model fails, the built-in offline model answers, so learners always get a reply. A failing model is skipped for a cool-down (2 minutes, or 15 for a missing key or retired model). The X-ray panel shows which model answered and why the others were skipped.
 
