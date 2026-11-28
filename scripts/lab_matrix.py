@@ -12,6 +12,7 @@ Run it on the VM, from the app folder, before a class:
   sudo -u airange .venv/bin/python scripts/lab_matrix.py --models mock:mock-gullible-1     # offline, free
   sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-gpt-oss-20b --pause 4   # Groq free tier
   sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-gpt-oss-20b --labs vault-4 --show  # see replies
+  sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-gpt-oss-20b --pause 8 --as-learners  # with fallback
 
 --models takes gateway model names (Admin > LLM gateway); "endpoint:model" picks another endpoint.
 --repeat N runs each attack N times and reports how often it worked (models are not deterministic).
@@ -94,6 +95,9 @@ def placeholders(db, user) -> dict:
     return {"savings": acct.account_no if acct else "", "txn": txn.txn_ref if txn else ""}
 
 
+AS_LEARNERS = False
+
+
 def run_attack(db, user, agent, override, messages) -> dict:
     """One fresh conversation. Returns detector keys hit, the last reply, tokens and any error."""
     from app.agents.runner import run_turn
@@ -103,9 +107,11 @@ def run_attack(db, user, agent, override, messages) -> dict:
     db.commit()
     keys, reply, tokens, error = set(), "", 0, ""
     for msg in messages:
-        res = run_turn(db, agent, user, session, msg, override=override)
+        res = run_turn(db, agent, user, session, msg, override=override, fallback=AS_LEARNERS)
         reply = res["reply"] or ""
         tr = res["trace"]
+        if AS_LEARNERS and tr.get("first_attempt"):
+            print(f"    {agent.slug}: {tr['first_attempt']['model']} refused or failed; local model answered", flush=True)
         keys |= set(tr.get("flags") or [])
         tokens += int(tr["usage"]["input"]) + int(tr["usage"]["output"])
         errs = [e.get("detail", "") for e in tr.get("events", []) if e.get("kind") == "error"]
@@ -144,10 +150,15 @@ def main(argv=None) -> int:
     ap.add_argument("--repeat", type=int, default=1, help="run each attack N times (default 1)")
     ap.add_argument("--pause", type=float, default=0.0,
                     help="seconds to wait between agent turns, to stay under free-tier rate limits (e.g. 4 for Groq)")
+    ap.add_argument("--as-learners", action="store_true",
+                    help="measure what learners get: a refused or failed lab turn is redone on the local model "
+                         "(Admin > LLM gateway > Failover). Without it, the real model alone is measured.")
     ap.add_argument("--show", action="store_true",
                     help="print the agent's reply whenever v1 didn't fall or v2 didn't hold (to see why)")
     ap.add_argument("--out", default=f"lab-matrix-{time.strftime('%Y%m%d-%H%M')}.csv")
     a = ap.parse_args(argv)
+    global AS_LEARNERS
+    AS_LEARNERS = a.as_learners
 
     from app import models  # noqa: F401
     from app.db import SessionLocal

@@ -1,6 +1,11 @@
 # Changelog
 
 ## 2026-11-28
+- **Refusal fallback:** when a real model refuses a lab's attack, or fails, on the lab's target agent, the turn is redone on the built-in local model.
+  - Learners see the local model as *Meridian Lite (local small model)*; the name is configurable.
+  - Hardened agents keep their refusals.
+  - The X-ray shows the refusal.
+  - `lab_matrix.py --as-learners` measures it.
 - **Startup no longer locks every table.** Migrations skip changes already applied and run each change in its own short transaction with a 10-second lock timeout. Before, all 21 `ALTER TABLE`s ran in one transaction on every start and could deadlock with live requests, or with the lab matrix, during an update.
 - **Labs tuned for capable real models** (from a `groq-gpt-oss-20b` lab-matrix run):
   - Detectors normalise typographic characters (narrow no-break spaces, non-breaking hyphens, zero-width joiners). read-hr and faq-poison had worked but went undetected.

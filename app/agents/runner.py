@@ -340,13 +340,48 @@ def graph_mermaid() -> str:
 
 # ---------------------------------------------------------------- entry point
 
-async def _arun(db, agent, user, session, user_text: str, override: tuple | None = None) -> dict:
-    """override=(provider, model) runs this turn on another endpoint without changing the agent (lab matrix)."""
+async def _arun(db, agent, user, session, user_text: str, override: tuple | None = None, fallback: bool | None = None) -> dict:
+    """override=(provider, model) runs this turn on another endpoint without changing the agent (lab matrix).
+    fallback: redo a refused or failed lab turn on the local model (default: yes for learners, no with override)."""
+    from ..providers import failover
     provider, model = override if override else (agent.provider, agent.model)
+    fo = failover.config(db)
+    started = time.time()
+    ctx, trace, reply = await _attempt(db, agent, user, session, user_text, provider, model, chain=not override)
+    if fallback is None:
+        fallback = not override
+    first_model = trace.get("model")
+    local = provider is not None and provider.kind == "mock" or first_model == failover.LOCAL or \
+        first_model == fo.get("local_name")
+    failed = reply.startswith("⚠️ The model call failed")
+    if fallback and fo["enabled"] and fo["local_fallback"] and not local and \
+            ((fo["refusal_fallback"] and failover.is_refusal(reply)) or failed) and agent.slug in failover.lab_targets(db):
+        from ..models import Provider
+        mock = db.query(Provider).filter_by(kind="mock").first()
+        if mock is not None:
+            why = "refused the lab's attack" if not failed else "failed"
+            ctx2, trace2, reply2 = await _attempt(db, agent, user, session, user_text, mock, failover.LOCAL, chain=False)
+            trace2["fallbacks"] = (trace.get("fallbacks") or []) + [{"model": first_model, "reason": why, "skipped": False,
+                                                                       "reply": reply[:200]}]
+            trace2["answered_by"] = trace2["model"] = fo.get("local_name") or failover.LOCAL
+            trace2["first_attempt"] = {"model": first_model, "reply": reply[:300], "steps": trace.get("steps", [])}
+            trace2["usage"]["input"] += trace["usage"]["input"]
+            trace2["usage"]["output"] += trace["usage"]["output"]
+            ctx2.event("fallback", guard="local model",
+                       detail=f"{first_model} {why}; {trace2['model']} answered this lab turn instead")
+            ctx, trace, reply = ctx2, trace2, reply2
+    if provider is not None and provider.kind == "mock" and not override:
+        trace["model"] = fo.get("local_name") or trace["model"]
+    if trace.get("model") == fo.get("local_name"):
+        trace["provider"] = "built-in, runs on this server"
+    return _finish(db, ctx, session, user_text, reply, trace, started)
+
+
+async def _attempt(db, agent, user, session, user_text, provider, model, chain: bool):
+    """One run of the agent graph. Returns (context, trace, reply); nothing is saved yet."""
     c = controls_for(agent)
     ctx = AgentContext(db=db, user=user, agent=agent, controls=c)
     ctx.learner_text = learner_text(db, user.id, user_text)
-    started = time.time()
     trace = {"agent": agent.name, "mode": agent.mode, "runtime": "LangGraph",
              "provider": provider.name if provider else "none", "model": model,
              "controls": c, "steps": [], "retrieved": [], "events": [], "flags": [], "solved": [],
@@ -357,9 +392,9 @@ async def _arun(db, agent, user, session, user_text: str, override: tuple | None
     try:
         p = provider
         args = (p, model or (p.default_model if p else ""), float(c.get("temperature", 0.3)), int(c.get("max_tokens", 800)))
-        if override:   # the lab matrix measures one specific model: no failover
+        if not chain:  # one specific model (the lab matrix, or the local-model retry): no failover chain
             llm = build_chat_model(*args, gateway=get_integration(db, "gateway"))
-        else:          # slow or failing model -> next available model -> offline model (Admin > LLM gateway > Failover)
+        else:          # slow or failing model -> next available model -> local model (Admin > LLM gateway > Failover)
             from ..providers.failover import build_failover
             llm = build_failover(db, *args, gateway=get_integration(db, "gateway"), trace=trace, ctx=ctx)
         tools = native_tools(ctx) + await mcp_tools(ctx, guard_cfg)
@@ -383,11 +418,12 @@ async def _arun(db, agent, user, session, user_text: str, override: tuple | None
     except Exception as e:  # noqa: BLE001  model/gateway errors must not crash the page
         reply = "⚠️ The model call failed. An admin can check Admin > LLM gateway."
         ctx.event("error", detail=f"{type(e).__name__}: {str(e)[:300]}")
-    return _finish(db, ctx, session, user_text, reply, trace, started)
+    return ctx, trace, reply
 
 
-def run_turn(db, agent, user, session, user_text: str, override: tuple | None = None) -> dict:
-    return asyncio.run(_arun_closing(db, agent, user, session, user_text, override))
+def run_turn(db, agent, user, session, user_text: str, override: tuple | None = None,
+             fallback: bool | None = None) -> dict:
+    return asyncio.run(_arun_closing(db, agent, user, session, user_text, override, fallback))
 
 
 async def _arun_closing(*args):

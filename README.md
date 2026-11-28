@@ -170,7 +170,9 @@ Configure it in **Admin → LLM gateway → Failover**:
 - the offline fallback;
 - a button to try every model again.
 
-The lab matrix (`scripts/lab_matrix.py`) bypasses failover, because it measures specific models.
+**Refusals:** safety-tuned models (gpt-oss, Claude, Gemini) often refuse a lab's attack outright, which would make the lab impossible. When a real model refuses on a lab's **target** agent, the turn is redone on the built-in local model, which plays each level as designed. The X-ray shows the refusal and which model answered. Hardened agents that are only a lab's "repeat on hardened" step keep their refusals, since refusing is their job. You can turn this off and rename the local model (default *Meridian Lite (local small model)*) on the same page.
+
+The lab matrix (`scripts/lab_matrix.py`) measures the real model alone. Add `--as-learners` to include these fallbacks and see what learners actually get.
 
 ## Privacy, acceptable use and terms
 The range has a **privacy notice**, an **acceptable use policy** (what learners may and may not attack) and **terms of use** at `/legal/…`, linked from the sign-in page and every footer. Everyone accepts them once before using the range.

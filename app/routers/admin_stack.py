@@ -54,6 +54,7 @@ def gateway(request: Request, db: Session = Depends(get_db), user: User = Depend
 @router.post("/gateway/failover")
 def gateway_failover(request: Request, csrf: str = Form(""), enabled: str = Form(""), timeout_s: str = Form("20"),
                      models: str = Form(""), local_fallback: str = Form(""), cooldown_s: str = Form("120"),
+                     refusal_fallback: str = Form(""), local_name: str = Form(""),
                      db: Session = Depends(get_db), user: User = Depends(require_admin)):
     from ..providers import failover
     verify_csrf(request, csrf)
@@ -64,7 +65,9 @@ def gateway_failover(request: Request, csrf: str = Form(""), enabled: str = Form
         return back("/admin/gateway#failover")
     chain = [m.strip() for m in models.replace("\n", ",").split(",") if m.strip()][:12]
     cfg = failover.save_config(db, {"enabled": bool(enabled), "timeout_s": t, "models": chain,
-                                    "local_fallback": bool(local_fallback), "cooldown_s": cd})
+                                    "local_fallback": bool(local_fallback), "cooldown_s": cd,
+                                    "refusal_fallback": bool(refusal_fallback),
+                                    "local_name": local_name.strip()[:80] or failover.DEFAULTS["local_name"]})
     failover.clear_cooldowns()
     audit(db, user, "Updated model failover", **{k: cfg[k] for k in ("enabled", "timeout_s", "models", "local_fallback")})
     flash(request, "Failover saved." if cfg["enabled"] else "Failover is off: agents use only their own model.")

@@ -19,6 +19,10 @@ DEFAULTS = {
     # are then skipped, so listing every gateway model is fine.
     "models": ["groq-gpt-oss-20b", "gemini-flash-lite", "groq-gpt-oss-120b", "claude-haiku"],
     "local_fallback": True,     # finally answer with the offline model
+    # A real model that refuses a lab's attack (safety-tuned models often do) makes the lab impossible; for agents
+    # that are a lab's target, the turn is redone on the local model, which plays each level as designed.
+    "refusal_fallback": True,
+    "local_name": "Meridian Lite (local small model)",   # what learners see for the built-in model
     "cooldown_s": 120,          # skip a model this long after a timeout / rate limit / outage
     "hard_cooldown_s": 900,     # ... and this long after a missing key, a retired model or an auth error
 }
@@ -131,12 +135,30 @@ class FailoverChat:
                 first = self.candidates[0][0]
                 if label != first:
                     self.trace["answered_by"] = label
-                    self.trace["model"] = label if label != LOCAL else f"{LOCAL} (offline fallback)"
+                    self.trace["model"] = label if label != LOCAL else self.cfg.get("local_name") or LOCAL
                     if label == LOCAL and self.ctx is not None:
                         self.ctx.event("fallback", guard="offline model",
                                        detail="every remote model failed or was too slow: the offline model answered")
             return res
         raise last_exc or RuntimeError("No model is available.")
+
+
+REFUSAL = __import__("re").compile(
+    r"\b(?:can[’']?t|cannot|can not|won[’']?t|will not|(?:am |[’']m )?unable to|(?:am |[’']m )?not able to)\s+"
+    r"(?:help|share|provide|assist|reveal|disclose|comply|give|tell|do that|fulfil|fulfill)", __import__("re").I)
+
+
+def is_refusal(reply: str) -> bool:
+    """A short reply that opens with a refusal ("I'm sorry, but I can't help with that")."""
+    r = (reply or "").strip()
+    return bool(r) and len(r) < 600 and bool(REFUSAL.search(r[:160]))
+
+
+def lab_targets(db) -> set[str]:
+    """Agents learners attack in a lab (each challenge's target). Hardened agents that are only a lab's
+    'repeat on hardened' step are not in it: refusing is their job."""
+    from ..models import Challenge
+    return {c.agent_slug for c in db.query(Challenge).filter_by(enabled=True) if c.agent_slug}
 
 
 def build_failover(db, provider, model: str, temperature: float, max_tokens: int, gateway: dict, trace: dict, ctx=None):

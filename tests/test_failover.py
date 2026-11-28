@@ -55,7 +55,7 @@ def test_everything_fails_offline_model_answers():
                          ("second", Fake(exc=RuntimeError("401 invalid api key"))),
                          (LOCAL, Fake("offline"))], CFG, trace)
     assert run(chat).content == "offline"
-    assert trace["model"].startswith(LOCAL) and [f["reason"] for f in trace["fallbacks"]] == ["rate-limited", "no valid API key"]
+    assert trace["model"] == failover.DEFAULTS["local_name"] and [f["reason"] for f in trace["fallbacks"]] == ["rate-limited", "no valid API key"]
 
 
 def test_turn_sticks_to_the_model_that_answered():
@@ -72,3 +72,11 @@ def test_classify():
     assert classify(RuntimeError('{"code":"model_not_found"}')) == ("model not available", True)
     assert classify(RuntimeError("AuthenticationError: bad api key")) == ("no valid API key", True)
     assert classify(RuntimeError("RateLimitError 429")) == ("rate-limited", False)
+
+
+def test_refusal_detection():
+    from app.providers.failover import is_refusal
+    assert is_refusal("I’m sorry, but I can’t help with that.")
+    assert is_refusal("I am unable to assist with that request.")
+    assert not is_refusal("I'm sorry to hear your card was blocked. I've refunded TXN-1.")
+    assert not is_refusal("Refund issued. I cannot wait to help you again!")

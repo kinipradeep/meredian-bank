@@ -20,7 +20,10 @@
   <label class="full">Models to try next, in order (gateway names, comma-separated) <input name="models" value="{{ fo.models|join(', ') }}" placeholder="groq-gpt-oss-20b, gemini-flash-lite, groq-gpt-oss-120b, claude-haiku"></label>
   <label>Time limit per model (seconds) <input type="number" name="timeout_s" min="3" max="120" value="{{ fo.timeout_s }}"></label>
   <label>Cool-down after a failure (seconds) <input type="number" name="cooldown_s" min="10" max="3600" value="{{ fo.cooldown_s }}"></label>
-  <label class="check full"><input type="checkbox" name="local_fallback" {{ 'checked' if fo.local_fallback }}> If every model fails, answer with the offline model (always replies; learners see it in the X-ray)</label>
+  <label class="check full"><input type="checkbox" name="local_fallback" {{ 'checked' if fo.local_fallback }}> If every model fails, answer with the local model (always replies; learners see it in the X-ray)</label>
+  <label class="check full"><input type="checkbox" name="refusal_fallback" {{ 'checked' if fo.refusal_fallback }}> If a real model refuses a lab's attack on the lab's target agent, redo the turn on the local model, which plays each level as designed. Hardened agents keep their refusals.</label>
+  <label class="full">Name learners see for the local model <input name="local_name" value="{{ fo.local_name }}" maxlength="80"></label>
+  <p class="muted full">The local model is the range's built-in, rule-based training model. It runs on this server, needs no key and never refuses a lab it's meant to fall for.</p>
   <div class="actions full"><button class="btn">Save failover</button></div>
 </form>
 <h3>Models being skipped right now</h3>
