@@ -6,6 +6,8 @@ def login(email, role="customer"):
     r = c.get("/login"); tok = re.search(r'name="csrf" value="([^"]+)"', r.text).group(1)
     r = c.post("/auth/dev", data={"email": email, "role": role, "csrf": tok}); assert r.status_code == 200, r.status_code
     c.tok = re.search(r'name="csrf" value="([^"]+)"', r.text) and re.search(r'name="csrf" value="([^"]+)"', r.text).group(1) or tok
+    if "/legal/accept" in str(r.url):   # first sign-in: accept the range's policies
+        r = c.post("/legal/accept", data={"csrf": c.tok, "next": "/", "privacy": "on", "terms": "on", "age": "on"})
     return c
 bad = []
 def get(c, p):

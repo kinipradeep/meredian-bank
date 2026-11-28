@@ -1,0 +1,44 @@
+{% extends "admin/base_admin.html" %}{% block title %}Policies{% endblock %}
+{% block content %}
+<h1>Policies</h1>
+<p class="muted">The privacy notice, acceptable use policy and terms of use every user accepts before using the range.
+The privacy notice is written from this deployment's live setup, so it updates itself when you switch an agent to another model provider or turn on Langfuse.</p>
+<div class="stats">
+  <div class="{{ 'good' if cfg.configured else 'bad' }}"><b>{{ 'Ready' if cfg.configured else 'Needs details' }}</b>operator details</div>
+  <div><b>{{ accepted }}/{{ total }}</b>users accepted v{{ cfg.version }}</div>
+  <div><b>{{ cfg.retention_days or 'Keep' }}</b>{{ 'days retention' if cfg.retention_days else 'no automatic deletion' }}</div>
+  <div><b>{{ facts.vendors|length }}</b>external model providers</div>
+</div>
+<p>{% for slug, label in pages.items() %}<a class="btn ghost" href="/legal/{{ slug }}" target="_blank">{{ label }} ↗</a> {% endfor %}</p>
+<div class="two">
+<section class="card"><h2>Operator details</h2>
+<form method="post" action="/admin/policies" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label class="full">Who runs this range (organisation or your name) <input name="operator_name" value="{{ cfg.operator_name }}" placeholder="e.g. Example Training Pvt Ltd" maxlength="300" required></label>
+  <label class="full">Postal address (optional) <input name="operator_address" value="{{ cfg.operator_address }}" maxlength="300"></label>
+  <label>Privacy &amp; contact email <input type="email" name="contact_email" value="{{ cfg.contact_email }}" required maxlength="300"></label>
+  <label>Governing law <input name="jurisdiction" value="{{ cfg.jurisdiction }}" maxlength="100"></label>
+  <label>Grievance officer name <input name="grievance_name" value="{{ cfg.grievance_name }}" maxlength="200"></label>
+  <label>Grievance officer email <input type="email" name="grievance_email" value="{{ cfg.grievance_email }}" maxlength="300"></label>
+  <label class="full">Where the server and data are (hosting provider, region) <input name="data_location" value="{{ cfg.data_location }}" placeholder="e.g. Akamai Cloud (Linode), Mumbai, India" maxlength="300"></label>
+  <label>Delete conversations &amp; activity after (days, 0 = keep) <input type="number" name="retention_days" min="0" max="3650" value="{{ cfg.retention_days }}"></label>
+  <label>Minimum age <input type="number" name="minimum_age" min="13" max="99" value="{{ cfg.minimum_age }}"></label>
+  <label class="check full"><input type="checkbox" name="require_acceptance" {{ 'checked' if cfg.require_acceptance }}> Require everyone to accept the policies before using the range</label>
+  <div class="actions full"><button class="btn">Save</button></div>
+</form></section>
+<div>
+<section class="card"><h2>What the privacy notice currently says</h2>
+<ul>
+  <li>Google sign-in: <b>{{ 'on' if facts.google else 'off' }}</b></li>
+  <li>Model providers that receive messages: <b>{{ facts.vendors|join(', ') if facts.vendors else 'none (all agents run on this server)' }}</b></li>
+  <li>Langfuse tracing: <b>{{ ('on, ' ~ facts.langfuse_host) if facts.langfuse else 'off' }}</b></li>
+</ul>
+<p class="muted">These follow the agents' endpoints and models (Admin → Agents) and Admin → Tracing.</p></section>
+<section class="card"><h2>After you change a policy</h2>
+<p>If the change matters to users, publish a new version so everyone accepts it again at their next page load.</p>
+<form method="post" action="/admin/policies/reaccept"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn ghost">Publish a new version (everyone re-accepts)</button></form></section>
+<section class="card"><h2>Retention</h2>
+<p>{% if cfg.retention_days %}Every night the server deletes conversations, activity, flag attempts and agent-sent emails older than {{ cfg.retention_days }} days.{% else %}Automatic deletion is off.{% endif %} Lab progress and accounts stay until a user is deleted (Admin → Users).</p>
+<form method="post" action="/admin/policies/purge"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn ghost">Purge old data now</button></form></section>
+</div></div>
+<p class="muted">These pages are a reasonable starting point for a training range, not legal advice. Have them reviewed if you run paid courses or train an organisation's staff.</p>
+{% endblock %}

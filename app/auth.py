@@ -35,6 +35,10 @@ class PasswordChangeRequired(Exception):
     pass
 
 
+class PoliciesRequired(Exception):
+    pass
+
+
 def current_user(request: Request, db: Session = Depends(get_db)) -> User | None:
     uid = request.session.get("uid")
     if not uid:
@@ -46,9 +50,13 @@ def current_user(request: Request, db: Session = Depends(get_db)) -> User | None
     return user
 
 
-def require_user(user: User | None = Depends(current_user)) -> User:
+def require_user(request: Request, user: User | None = Depends(current_user), db: Session = Depends(get_db)) -> User:
     if not user:
         raise LoginRequired()
+    # Everyone accepts the privacy notice, acceptable use policy and terms (current version) before using the range.
+    from .legal import needs_acceptance
+    if not request.url.path.startswith(("/legal", "/admin/account", "/admin/policies")) and needs_acceptance(db, user):
+        raise PoliciesRequired()
     return user
 
 

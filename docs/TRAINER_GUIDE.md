@@ -4,6 +4,8 @@
 > private (GitHub → Settings → Danger zone → Change visibility) or keep a copy of this guide elsewhere.
 
 ## Before the session (30 minutes)
+Fill in **Admin → Policies** once (operator, contact, grievance officer, hosting location, retention). Until you do, the privacy notice shows placeholders, and admins see a warning on the policy pages.
+
 Co-trainers need their own admin login: add them under **Admin → Administrators**. Don't share yours.
 
 

@@ -1,0 +1,19 @@
+{% extends "legal/_base.html" %}
+{% block legal %}
+<p class="lead">What the range holds about you, and how to get a copy or have it deleted.</p>
+<table class="kv">
+  <tr><th>Signed in as</th><td>{{ user.name }} &lt;{{ user.email }}&gt;</td></tr>
+  <tr><th>Account created</th><td>{{ user.created_at.strftime('%d %b %Y') if user.created_at }}</td></tr>
+  <tr><th>Policies accepted</th><td>{% if user.policies_accepted_at %}version {{ user.policies_version }}, {{ user.policies_accepted_at.strftime('%d %b %Y %H:%M') }} UTC{% else %}not yet{% endif %}</td></tr>
+  <tr><th>Conversations</th><td>{{ counts.conversations }} ({{ counts.messages }} messages)</td></tr>
+  <tr><th>Labs completed</th><td>{{ counts.solves }}</td></tr>
+  <tr><th>Automatic deletion</th><td>{% if cfg.retention_days %}conversations and activity older than {{ cfg.retention_days }} days{% else %}none: kept until your account is deleted{% endif %}</td></tr>
+</table>
+<h2>Download a copy</h2>
+<p>A JSON file with your profile, every conversation, your lab progress, flag attempts, activity log and the emails agents sent for you.</p>
+<p><a class="btn" href="/legal/my-data/export">Download my data</a></p>
+<h2>Delete my account</h2>
+<p>Deleting your account erases it together with your conversations, progress, activity and fictional bank profile. It can't be undone.
+{% if cfg.contact_email %}Email <a href="mailto:{{ cfg.contact_email }}?subject={{ 'Please delete my Meridian Bank range account'|urlencode }}&amp;body={{ ('Please delete my account and its data: ' ~ user.email)|urlencode }}">{{ cfg.contact_email }}</a> from the address you sign in with, and an administrator will delete it.{% else %}Ask your trainer or an administrator to delete it.{% endif %}</p>
+<p class="muted">See the <a href="/legal/privacy#rights">privacy notice</a> for all your rights, including complaints.</p>
+{% endblock %}

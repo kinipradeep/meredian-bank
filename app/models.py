@@ -27,6 +27,8 @@ class User(Base):
     mcp_token: Mapped[str] = mapped_column(String(80), default="", index=True)  # for the bank's MCP endpoint
     password_hash: Mapped[str] = mapped_column(String(200), default="")  # only local admin accounts have one
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)  # set for temporary passwords
+    policies_version: Mapped[str] = mapped_column(String(40), default="")   # version of the policies accepted
+    policies_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     @property
     def is_admin(self) -> bool:

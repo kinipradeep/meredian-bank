@@ -44,3 +44,4 @@ table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px;bord
 .progress-grid tr.totals td{border-top:2px solid var(--line)}.stats .good b{color:var(--good)}
 .newpw{border-color:var(--warn);background:#FFFBF0}.newpw .big{font-size:20px;letter-spacing:.5px;user-select:all}
 fieldset{border:1px solid var(--line);border-radius:8px;padding:8px 12px}fieldset legend{font-size:12px;padding:0 4px}
+.danger-zone{margin-top:6px}.danger-zone summary{cursor:pointer;color:var(--bad);font-size:12px}.danger-zone form{margin-top:6px}

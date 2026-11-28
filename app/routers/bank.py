@@ -32,6 +32,9 @@ def _agents(db, surface: str | None = None):
 def home(request: Request, db: Session = Depends(get_db), user: User | None = Depends(current_user)):
     if not user:
         return templates.TemplateResponse(request, "bank/landing.html", _ctx(request, db, None))
+    from ..legal import needs_acceptance
+    if needs_acceptance(db, user):
+        return RedirectResponse("/legal/accept?next=/", status_code=303)
     accounts = db.query(BankAccount).filter_by(customer_id=user.customer_id).all()
     acct_nos = [a.account_no for a in accounts]
     txns = (db.query(BankTransaction).filter(BankTransaction.account_no.in_(acct_nos))

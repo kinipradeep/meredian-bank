@@ -23,6 +23,8 @@ MIGRATIONS = [  # columns added after the first release; create_all does not alt
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS mcp_token VARCHAR(80) NOT NULL DEFAULT ''",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(200) NOT NULL DEFAULT ''",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS policies_version VARCHAR(40) NOT NULL DEFAULT ''",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS policies_accepted_at TIMESTAMPTZ",
     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS mcp_servers JSON",
     "ALTER TABLE challenges ALTER COLUMN domain TYPE VARCHAR(200)",
     "ALTER TABLE challenges ADD COLUMN IF NOT EXISTS category VARCHAR(60) NOT NULL DEFAULT ''",

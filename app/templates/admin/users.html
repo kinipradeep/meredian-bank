@@ -8,6 +8,10 @@
   <td><form method="post" action="/admin/users/{{ u.id }}" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
     <select name="role">{% for r in roles %}<option {{ 'selected' if u.role == r }}>{{ r }}</option>{% endfor %}</select>
     <label class="check"><input type="checkbox" name="active" {{ 'checked' if u.is_active }}> active</label> <button class="btn small">Save</button></form></td>
-  <td><form method="post" action="/admin/users/{{ u.id }}/reset-bank" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small ghost">Reset bank data</button></form></td></tr>{% endfor %}
+  <td><form method="post" action="/admin/users/{{ u.id }}/reset-bank" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small ghost">Reset bank data</button></form>
+    {% if u.id != user.id %}<details class="danger-zone"><summary>Delete…</summary>
+      <form method="post" action="/admin/users/{{ u.id }}/delete"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+        <p class="small">Erases the account, conversations, progress, activity, files and fictional bank profile. Type <b>{{ u.email }}</b> to confirm:</p>
+        <input name="confirm" autocomplete="off" required> <button class="btn small danger">Delete user and data</button></form></details>{% endif %}</td></tr>{% endfor %}
 </table></section>
 {% endblock %}

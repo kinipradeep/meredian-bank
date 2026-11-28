@@ -1,0 +1,32 @@
+{% extends "legal/_base.html" %}
+{% block legal %}
+{% set op = cfg.operator_name or "the organisation running this range" %}
+<p class="lead">These terms apply when you use the Meridian Bank AI security range ("the range") run by {{ op }}. By accepting them you also agree to the <a href="/legal/acceptable-use">acceptable use policy</a>, and confirm you have read the <a href="/legal/privacy">privacy notice</a>.</p>
+
+<h2>1. Who may use it</h2>
+<p>You must be {{ cfg.minimum_age }} or older and invited to the range, for example as a participant in a course or event.{% if facts.allowed_domains %} Sign-in is limited to these email domains: {{ facts.allowed_domains|join(", ") }}.{% endif %} Keep your sign-in to yourself; you are responsible for what happens under your account.</p>
+
+<h2>2. What the range is</h2>
+<p>A deliberately vulnerable training environment. Meridian Bank, its people, customers, accounts, transactions and documents are fictional. Nothing in the range is financial, legal or professional advice, and no real money moves. Agents can be wrong, offensive or manipulated; that is part of the training.</p>
+
+<h2>3. Availability and changes</h2>
+<p>The range is provided "as is", for education. It may be slow or unavailable, labs may change, and trainers may reset scenarios. Records created during labs (including your conversations) may be deleted, as described in the privacy notice. Keep your own notes if you need them.</p>
+
+<h2>4. Your content</h2>
+<p>You keep any rights in what you type or upload. You let {{ op }} store and process it to run the range, show it to trainers, send it to the AI model providers named in the privacy notice, and keep the range secure. Don't submit anything confidential, anything you have no right to share, or any real personal data.</p>
+
+<h2>5. The range's content</h2>
+<p>The labs, scenarios, documents and guides belong to their authors or are used under their open-source licences. Use them for your own learning. Don't republish the labs, answers or bundled content as your own course or service without permission.</p>
+
+<h2>6. Ending your access</h2>
+<p>You can stop at any time and ask for your account to be deleted. {{ op }} may suspend or delete accounts that break these terms or the acceptable use policy, and may close the range when a course or event ends.</p>
+
+<h2>7. Responsibility</h2>
+<p>To the extent the law allows, {{ op }} is not liable for indirect or consequential loss arising from use of the range, or for loss of data you chose to store in it. Nothing in these terms limits liability that cannot be limited by law.</p>
+
+<h2>8. Changes to these terms</h2>
+<p>We may update these terms. If a change matters, we update the version above and ask you to accept again at your next sign-in.</p>
+
+<h2>9. Law</h2>
+<p>These terms are governed by the laws of {{ cfg.jurisdiction or "India" }}, and its courts have jurisdiction over any dispute, without taking away any protection the law of your own country gives you.</p>
+{% endblock %}

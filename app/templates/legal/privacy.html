@@ -1,0 +1,73 @@
+{% extends "legal/_base.html" %}
+{% block legal %}
+{% set op = cfg.operator_name or "the organisation running this range" %}
+<p class="lead">This notice explains what the Meridian Bank AI security range collects about you, why, who can see it, and how long it is kept. The range is run by <b>{{ op }}</b>, which decides how your data is used (the "data fiduciary" under India's Digital Personal Data Protection Act, 2023, or "controller" elsewhere).</p>
+
+<div class="callout"><b>A training environment, monitored by your trainers.</b> Meridian Bank is fictional: its customers, accounts, money and documents are made up. Trainers and administrators can read everything you type to the agents. <b>Never enter real personal, financial or confidential information.</b></div>
+
+<h2>What we collect</h2>
+<ul>
+  <li><b>Your account:</b> {% if facts.google %}the name, email address and profile picture link from your Google account when you sign in with Google{% else %}your name and email address{% endif %}; your role; when you joined and last signed in; and when you accepted these policies. Administrators with a local password: a salted scrypt hash of it, never the password itself.</li>
+  <li><b>What you do in the labs:</b> your messages to the agents and their replies, including the tools they called, the documents they retrieved and the security checks that ran ("traces"); labs you completed, steps and answers you opened, and flags you submitted.</li>
+  <li><b>Records the agents create</b> while you attack them, such as refunds, transfers, loan offers, FAQ answers and simulated emails. Nothing is ever sent outside the range.</li>
+  <li><b>An activity log:</b> sign-ins, policy acceptance, admin actions, and for each agent turn the model used, token counts, timing and guard results.</li>
+  <li><b>A fictional bank profile:</b> when you first sign in we generate a made-up customer ID, accounts and transactions for you. They are test data, not information about you.</li>
+  <li><b>Technical data:</b> your IP address is used in memory to slow down repeated wrong passwords and is not stored in the range's database. The server's system logs may record IP addresses and the pages requested, for security and troubleshooting, and rotate them automatically.</li>
+</ul>
+
+<h2>Why we use it</h2>
+<ul>
+  <li>To run the labs: the agents need your messages to answer, and the range needs your progress to show what you have completed.</li>
+  <li>So trainers can teach: they review conversations, progress and which answers were opened, to help you and to grade sessions they run.</li>
+  <li>To keep the range secure and fair: to detect abuse, enforce the <a href="/legal/acceptable-use">acceptable use policy</a> and investigate problems.</li>
+  <li>To improve the labs: for example by seeing which labs most people get stuck on.</li>
+</ul>
+<p>We rely on the consent you give when you accept these policies. You can withdraw it at any time (see <a href="#rights">Your rights</a>); the range cannot be used without it. We do not sell your data, show advertising, or use analytics or tracking tools.</p>
+
+<h2>Who can see it</h2>
+<ul>
+  <li><b>Trainers and administrators</b> of this range: everything above, including full conversations.</li>
+  <li><b>Other learners:</b> nothing of yours, except that in a competitive (CTF) event the scoreboard can show your display name and score.</li>
+  <li><b>Service providers</b> that process data for us:
+    <ul>
+      <li><b>Hosting:</b> the range runs on a server{% if cfg.data_location %} at <b>{{ cfg.data_location }}</b>{% else %} chosen by {{ op }}{% endif %}. The databases and backups are stored there.</li>
+      {% if facts.google %}<li><b>Google</b>, when you choose "Continue with Google": Google confirms who you are and sends us your name, email and picture link. Your profile picture is loaded from Google's servers.</li>{% endif %}
+      {% if facts.vendors %}<li><b>AI model providers:</b> {{ facts.vendors|join(", ") }}. Each message you send an agent goes to its model together with the agent's instructions, which include your name and fictional customer ID, plus any documents the agent retrieved. Each provider handles that data under its own terms; some free tiers may use prompts to improve their services.</li>
+      {% else %}<li><b>AI models:</b> the agents currently use models that run on this server, so your messages do not leave it. If a trainer switches an agent to an external provider, this notice will name it.</li>{% endif %}
+      {% if facts.langfuse %}<li><b>Langfuse</b> ({{ facts.langfuse_host }}), our tracing service: it receives each conversation's messages, tool calls and timings, labelled with your email address, so trainers can replay agent runs.</li>{% endif %}
+    </ul>
+  </li>
+  <li><b>Authorities</b>, only where the law requires it.</li>
+</ul>
+{% if facts.vendors or facts.langfuse or facts.google %}<p>Some of these providers may process data outside your country. They act under their own privacy and security commitments.</p>{% endif %}
+
+<h2>How long we keep it</h2>
+<ul>
+  {% if cfg.retention_days %}<li><b>Conversations, the activity log, flag attempts and agent-sent emails:</b> deleted automatically after <b>{{ cfg.retention_days }} days</b>.</li>
+  {% else %}<li><b>Conversations, the activity log, flag attempts and agent-sent emails:</b> kept until your account is deleted.</li>{% endif %}
+  <li><b>Your account, lab progress and fictional bank profile:</b> until your account is deleted, at your request or when {{ op }} closes the range.</li>
+  <li><b>Backups</b> of the databases are kept for 14 days, then overwritten.</li>
+  <li>Copies held by the model providers{% if facts.langfuse %} and Langfuse{% endif %} follow their own retention periods.</li>
+</ul>
+
+<h2>How we protect it</h2>
+<p>Encrypted HTTPS connections; access to the admin area only for named administrators, with lockout after repeated wrong passwords; provider API keys kept where the agents cannot reach them; secrets encrypted in the database; a firewall that exposes only the website; and automatic security updates on the server. The range deliberately contains vulnerable AI agents, but they work on fictional data; please don't give them real data.</p>
+
+<h2 id="rights">Your rights</h2>
+<ul>
+  <li><b>Access and copy:</b> download everything the range holds about you from <a href="/legal/my-data">Your data</a>.</li>
+  <li><b>Correction:</b> your name comes from your Google account; ask us to fix anything else.</li>
+  <li><b>Deletion and withdrawing consent:</b> ask us to delete your account. We erase it together with your conversations, progress, activity and fictional bank profile, and it drops out of backups within 14 days.</li>
+  <li><b>Nomination:</b> you can nominate someone to exercise these rights for you if you die or become unable to.</li>
+  <li><b>Grievances:</b> contact {% if cfg.grievance_name or cfg.grievance_email %}our grievance officer, {{ cfg.grievance_name or "the grievance officer" }}{% if cfg.grievance_email %} (<a href="mailto:{{ cfg.grievance_email }}">{{ cfg.grievance_email }}</a>){% endif %}{% else %}us at the address below{% endif %}. We respond as soon as we reasonably can and within the time the law requires. If you are not satisfied, you can complain to the Data Protection Board of India, or to the data protection authority where you live.</li>
+</ul>
+
+<h2>Cookies</h2>
+<p>The range sets one cookie, <code>airange_session</code>. It is essential: it keeps you signed in and protects forms against cross-site attacks. It expires 12 hours after you sign in, or when you sign out. There are no analytics, advertising or third-party cookies.</p>
+
+<h2>Age</h2>
+<p>The range is for people aged {{ cfg.minimum_age }} or over. Do not use it if you are younger.</p>
+
+<h2>Changes</h2>
+<p>If we change this notice in a way that matters, we update the version above and ask you to accept it again at your next sign-in.</p>
+{% endblock %}

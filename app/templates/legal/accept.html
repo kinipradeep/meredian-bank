@@ -1,0 +1,23 @@
+{% extends "base_bank.html" %}
+{% block title %}Before you start · Meridian Bank range{% endblock %}
+{% block content %}
+<section class="legal accept">
+  <h1>Before you start</h1>
+  <p>{{ cfg.operator_name or "This range" }}{{ " runs this range" if cfg.operator_name }} for AI security training. {% if user.policies_version %}The policies have changed since you last accepted them. {% endif %}Please read and accept them to continue.</p>
+  <ul class="accept-points">
+    <li><b>Trainers can see everything you type</b> to the agents, and your lab progress.</li>
+    <li><b>Meridian Bank is fictional.</b> Never enter real personal, financial or confidential data.</li>
+    <li><b>Attack only the lab targets</b>: the bank's agents, tools and MCP servers. Never the server, other learners, or anything outside the range.</li>
+    {% if facts.vendors %}<li>Your messages are sent to these AI model providers: <b>{{ facts.vendors|join(", ") }}</b>{{ ", and to Langfuse for tracing" if facts.langfuse }}.</li>{% endif %}
+    {% if cfg.retention_days %}<li>Conversations and activity are deleted after <b>{{ cfg.retention_days }} days</b>.</li>{% endif %}
+  </ul>
+  <form method="post" action="/legal/accept" class="accept-form">
+    <input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><input type="hidden" name="next" value="{{ next }}">
+    <label class="check"><input type="checkbox" name="privacy" required> I have read the <a href="/legal/privacy" target="_blank">privacy notice</a>.</label>
+    <label class="check"><input type="checkbox" name="terms" required> I agree to the <a href="/legal/acceptable-use" target="_blank">acceptable use policy</a> and the <a href="/legal/terms" target="_blank">terms of use</a>.</label>
+    <label class="check"><input type="checkbox" name="age" required> I am {{ cfg.minimum_age }} or older.</label>
+    <div class="actions"><button class="btn">Accept and continue</button></div>
+  </form>
+  <form method="post" action="/logout" class="decline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="linkbtn">I don't agree: sign me out</button></form>
+</section>
+{% endblock %}

@@ -284,8 +284,11 @@ printf '[Service]\nEnvironmentFile=/etc/caddy/airange.env\n' > /etc/systemd/syst
 install -m 644 "$APP/deploy/caddy/Caddyfile" /etc/caddy/Caddyfile
 systemctl daemon-reload && systemctl enable -q caddy && systemctl restart caddy
 
-step "Nightly backups (02:15)"
-( crontab -u airange -l 2>/dev/null | grep -v backup.sh; echo "15 2 * * * $APP/scripts/backup.sh >> $APP/backups/backup.log 2>&1" ) | crontab -u airange -
+step "Nightly backups (02:15) and retention purge (02:45)"
+( crontab -u airange -l 2>/dev/null | grep -v -e backup.sh -e purge-data
+  echo "15 2 * * * $APP/scripts/backup.sh >> $APP/backups/backup.log 2>&1"
+  echo "45 2 * * * cd $APP && set -a && . ./.env && set +a && .venv/bin/python -m app.cli purge-data >> $APP/backups/purge.log 2>&1"
+) | crontab -u airange -
 
 step "Waiting for the app"
 for _ in $(seq 1 60); do curl -fs http://127.0.0.1:8080/healthz >/dev/null && break; sleep 3; done

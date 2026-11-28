@@ -1,6 +1,13 @@
 # Changelog
 
 ## 2026-11-28
+- **Privacy notice, acceptable use policy and terms of use:**
+  - pages under `/legal`, accepted at first sign-in, with re-acceptance when a new version is published;
+  - the privacy notice reflects the live setup (model providers, Google sign-in, Langfuse, retention);
+  - **Admin → Policies** for operator and grievance-officer details, retention and acceptance stats;
+  - learner data download (JSON);
+  - deleting a user and all their data from Admin → Users;
+  - a nightly retention purge.
 - **Single-file installer:** `scripts/make-installer.sh` builds `meridian-range-installer.sh`, which bundles the code (no GitHub needed on the VM) and reads every setting from one `range.env` file:
   - domain (or `<IP>.sslip.io` when blank) and admin account;
   - Google sign-in and Langfuse keys;

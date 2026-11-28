@@ -161,6 +161,17 @@ sudo -u airange .venv/bin/python -m app.cli set-agent-model --model groq-llama-8
 
 **Day-to-day:** `journalctl -u airange-app -f` (or another service name) for logs; `systemctl restart airange-<name>` to restart; `/opt/airange/scripts/backup.sh` to back up by hand.
 
+## Privacy, acceptable use and terms
+The range has a **privacy notice**, an **acceptable use policy** (what learners may and may not attack) and **terms of use** at `/legal/…`, linked from the sign-in page and every footer. Everyone accepts them once before using the range.
+
+- **Before your first class,** fill in **Admin → Policies**: who runs the range, a contact email, a grievance officer (India's DPDP Act), where the server is hosted, and how many days to keep conversations (default 180; 0 = keep).
+- The privacy notice is generated from the live setup. It names the AI providers your agents actually use and says whether Google sign-in and Langfuse are on, so it changes when you switch models.
+- **Publish a new version** after a meaningful change, and everyone accepts again at their next page load.
+- Learners can **download their data** as JSON from *Your data*. Admins can **delete a user and all their data** from **Admin → Users**.
+- Old conversations and activity are purged every night at 02:45 (`python -m app.cli purge-data`).
+
+The text is a sound starting point for a training range, not legal advice. Have it reviewed if you sell courses or train an organisation's staff.
+
 ## More administrators
 **Admin → Administrators** lists every admin and lets you:
 - **Add an administrator** by email, choosing how they sign in:

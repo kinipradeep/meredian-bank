@@ -1,0 +1,34 @@
+{% extends "legal/_base.html" %}
+{% block legal %}
+{% set op = cfg.operator_name or "the organisation running this range" %}
+<p class="lead">The range exists so you can practise attacking and defending AI systems in a safe, legal place. You have permission to attack the <b>Meridian Bank lab targets</b> listed below, and nothing else. This policy sets out what that permission covers.</p>
+
+<h2>In scope: what you may attack</h2>
+<ul>
+  <li>The Meridian Bank agents and assistants, their prompts, retrieval (RAG), tools, memory and guardrails.</li>
+  <li>The bank's simulated systems as reached <b>through the range's own pages and agents</b>: accounts, transactions, refunds, MeriDrive files, the FAQ, treasury, loans, vendor payments and screening.</li>
+  <li>The lab MCP servers, using the token the range gives you on the <a href="/lab">Agents &amp; MCP</a> page, from your own MCP client.</li>
+  <li>The planted secrets, override codes and flags. They are fake and exist to be found.</li>
+</ul>
+
+<h2>Out of scope: what you must not do</h2>
+<ul>
+  <li><b>Attack the infrastructure</b>, including the server and its operating system, SSH, the database, the web server, the LLM gateway and its admin UI, LLM Guard, the tracing service, sign-in, or the hosting provider. No port scanning, brute-forcing, exploit attempts or vulnerability scanners against them.</li>
+  <li><b>Disrupt the service:</b> no flooding, denial-of-service, or scripts that send large volumes of requests. Automated tooling is allowed only if your trainer says so, and at a gentle rate.</li>
+  <li><b>Target people:</b> no attempts to access other learners' accounts or data, no impersonating trainers, no sharing or selling accounts.</li>
+  <li><b>Go after real secrets:</b> don't try to obtain the operator's real API keys, passwords or server credentials. The fake ones planted in the labs are fair game.</li>
+  <li><b>Use the range against anyone else:</b> don't use the agents, tools or server to reach, scan or attack any system outside the range.</li>
+  <li><b>Generate genuinely harmful content:</b> practise jailbreaks on the lab objectives (leaking the bank's prompt, its fake secrets, unauthorised refunds and so on). Don't use the range to produce malware, weapons or other dangerous instructions, sexual content involving minors, harassment, hate, or content that breaks the AI providers' usage policies.</li>
+  <li><b>Enter real data:</b> no real personal, financial, customer or employer information, in chats, files or MCP requests.</li>
+  <li><b>Undermine assessed sessions:</b> when a trainer runs a graded session or a CTF, don't share flags, answers or accounts unless they allow it.</li>
+</ul>
+
+<h2>Found a real vulnerability?</h2>
+<p>If you find a weakness in the range itself (not one of its deliberate lab flaws), such as a way to reach the server, another learner's data or the real API keys, stop there. Don't use it further, and report it privately to {{ op }}{% if cfg.contact_email %} at <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>{% endif %}. Please give us a reasonable time to fix it before telling anyone else. Good-faith reports are welcome and won't be held against you.</p>
+
+<h2>Outside the range</h2>
+<p>The techniques you learn here are only legal on systems you own or have written permission to test. Using them anywhere else may be a crime, for example under India's Information Technology Act, 2000 or similar laws in your country.</p>
+
+<h2>Monitoring and enforcement</h2>
+<p>Trainers and administrators can see all activity in the range (see the <a href="/legal/privacy">privacy notice</a>). If you break this policy, we may stop your session, suspend or delete your account, tell your trainer or organisation and, where the law requires it, the authorities.</p>
+{% endblock %}

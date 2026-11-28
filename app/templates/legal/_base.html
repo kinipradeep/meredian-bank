@@ -1,0 +1,15 @@
+{% extends "base_bank.html" %}
+{% block title %}{{ title }} · Meridian Bank range{% endblock %}
+{% block content %}
+{% set op = cfg.operator_name or "the organisation running this range" %}
+{% set contact = cfg.contact_email %}
+<article class="legal">
+  <nav class="legal-nav">{% for slug, label in pages.items() %}<a href="/legal/{{ slug }}" {{ 'class=on' if slug == page }}>{{ label }}</a>{% endfor %}{% if user %}<a href="/legal/my-data" {{ 'class=on' if page == 'my-data' }}>Your data</a>{% endif %}</nav>
+  {% if user and user.is_admin and not cfg.configured %}<div class="alert error">Admin: these pages still show placeholders. Fill in the operator name and contact email in <a href="/admin/policies">Admin → Policies</a>.</div>{% endif %}
+  <h1>{{ title }}</h1>
+  {% if page in pages %}<p class="muted">Version {{ cfg.version }} · effective {{ cfg.effective }} · applies to {{ facts.base_url }}</p>{% endif %}
+  {% block legal %}{% endblock %}
+  {% if page in pages %}<h2>Contact</h2>
+  <p>{{ op }}{% if cfg.operator_address %}, {{ cfg.operator_address }}{% endif %}.{% if contact %} Email <a href="mailto:{{ contact }}">{{ contact }}</a>.{% else %} <em>Contact details have not been set yet; ask your trainer.</em>{% endif %}</p>{% endif %}
+</article>
+{% endblock %}

@@ -41,6 +41,8 @@ def main(argv=None) -> int:
     m.add_argument("--endpoint", default="gateway", help="endpoint slug: gateway (default), mock, ollama-direct")
     m.add_argument("--agents", default="", help="comma-separated agent slugs; blank = all agents")
     m.add_argument("--list", action="store_true", help="only show the current endpoint/model per agent")
+    pg = sub.add_parser("purge-data", help="delete conversations/activity older than the retention period (Admin > Policies)")
+    pg.add_argument("--days", type=int, default=None, help="override the retention period")
     a = ap.parse_args(argv)
 
     from . import models  # noqa: F401  (registers tables)
@@ -53,6 +55,10 @@ def main(argv=None) -> int:
     try:
         if a.cmd == "set-agent-model":
             return _set_agent_model(db, a)
+        if a.cmd == "purge-data":
+            from .legal import purge
+            print("purge:", purge(db, a.days))
+            return 0
         email = a.email.lower().strip()
         user = db.query(User).filter_by(email=email).first()
         if a.cmd == "remove-password":

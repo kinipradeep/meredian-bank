@@ -128,3 +128,13 @@ details.devlogin form { display:grid; gap:10px; margin-top:10px; } details.devlo
 .steps li { margin:6px 0; } .answer { background:#F1FAF5; border-left:4px solid #2E9E6A; padding:6px 14px; border-radius:8px; }
 .answer p { margin:6px 0; } .lab-nav { display:flex; justify-content:space-between; margin-top:20px; border-top:1px solid var(--line); padding-top:12px; }
 .diff.d-easy { color:#2E9E6A; } .diff.d-medium { color:#D9822B; } .diff.d-hard { color:#C23B5A; } .diff.d-insane { color:#6B2FA0; }
+/* policies */
+.legal{max-width:780px;margin:0 auto;line-height:1.6}.legal h2{margin-top:28px}.legal .lead{font-size:17px}
+.legal-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}.legal-nav a{padding:6px 12px;border-radius:999px;border:1px solid #D5DBE3;text-decoration:none;font-size:14px}
+.legal-nav a.on{background:#0E2A47;color:#fff;border-color:#0E2A47}
+.legal .callout{background:#FFF8E5;border:1px solid #E8C770;border-radius:10px;padding:12px 16px;margin:16px 0}
+.legal ul ul{margin-top:6px}.legal code{background:#F2F4F7;padding:1px 5px;border-radius:4px}
+.accept{max-width:640px}.accept-points li{margin:6px 0}.accept-form .check{display:flex;gap:10px;align-items:flex-start;margin:10px 0}
+.accept-form .check input{margin-top:5px}.accept .decline{margin-top:10px}.kv th{text-align:left;padding:6px 16px 6px 0;color:#5B6675;font-weight:500}
+.foot-links{display:flex;justify-content:center;gap:16px;margin-top:6px}.foot-links a{color:inherit;opacity:.85}
+.small{font-size:13px}

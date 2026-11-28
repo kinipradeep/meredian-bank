@@ -14,7 +14,7 @@ from .config import get_settings
 from .db import Base, SessionLocal, engine, migrate
 from .mcp_servers.bank import http_app as bank_http_app
 from .mcp_servers.bank import mcp as bank_mcp
-from .routers import admin, admin_ctf, admin_drive, admin_progress, admin_stack, bank, chat, ctf as ctf_router
+from .routers import admin, admin_ctf, admin_drive, admin_progress, admin_stack, bank, chat, ctf as ctf_router, legal as legal_router, admin_legal
 
 log = logging.getLogger("airange")
 settings = get_settings()
@@ -84,6 +84,8 @@ app.include_router(admin_drive.router)
 app.include_router(ctf_router.router)
 app.include_router(admin_ctf.router)
 app.include_router(admin_progress.router)
+app.include_router(legal_router.router)
+app.include_router(admin_legal.router)
 app.mount("/mcp", bank_mcp_app)
 
 
@@ -97,6 +99,14 @@ async def security_headers(request: Request, call_next):
                             "default-src 'self'; img-src 'self' data: https://*.googleusercontent.com; "
                             "style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'")
     return resp
+
+
+@app.exception_handler(auth.PoliciesRequired)
+async def _policies_required(request: Request, exc):
+    if request.url.path.startswith("/api/"):
+        return HTMLResponse("Accept the range's policies first: reload the page.", status_code=403)
+    from urllib.parse import quote
+    return RedirectResponse("/legal/accept?next=" + quote(request.url.path), status_code=303)
 
 
 @app.exception_handler(auth.LoginRequired)

@@ -27,7 +27,8 @@
   {% endif %}
 </header>
 <main class="page">{% block content %}{% endblock %}</main>
-<footer class="foot">Meridian Bank is a fictional bank used for AI security training. No real accounts, money or customers.</footer>
+<footer class="foot">Meridian Bank is a fictional bank used for AI security training. No real accounts, money or customers.
+  <nav class="foot-links"><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable use</a><a href="/legal/terms">Terms</a>{% if user %}<a href="/legal/my-data">Your data</a>{% endif %}</nav></footer>
 {% block scripts %}{% endblock %}
 </body>
 </html>
