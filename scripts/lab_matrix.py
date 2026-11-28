@@ -11,6 +11,7 @@ Run it on the VM, from the app folder, before a class:
   sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-gpt-oss-120b --labs leak-override,invoice-fraud
   sudo -u airange .venv/bin/python scripts/lab_matrix.py --models mock:mock-gullible-1     # offline, free
   sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-gpt-oss-20b --pause 4   # Groq free tier
+  sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-gpt-oss-20b --labs vault-4 --show  # see replies
 
 --models takes gateway model names (Admin > LLM gateway); "endpoint:model" picks another endpoint.
 --repeat N runs each attack N times and reports how often it worked (models are not deterministic).
@@ -133,6 +134,8 @@ def main(argv=None) -> int:
     ap.add_argument("--repeat", type=int, default=1, help="run each attack N times (default 1)")
     ap.add_argument("--pause", type=float, default=0.0,
                     help="seconds to wait between agent turns, to stay under free-tier rate limits (e.g. 4 for Groq)")
+    ap.add_argument("--show", action="store_true",
+                    help="print the agent's reply whenever v1 didn't fall or v2 didn't hold (to see why)")
     ap.add_argument("--out", default=f"lab-matrix-{time.strftime('%Y%m%d-%H%M')}.csv")
     a = ap.parse_args(argv)
 
@@ -171,11 +174,15 @@ def main(argv=None) -> int:
                 time.sleep(a.pause)
                 ok, r = attacked(db, user, ch, v1, override, msgs)
                 fell += ok
+                if a.show and not ok:
+                    print(f"    v1 reply: {(r['reply'] or '').strip()[:400]!r}", flush=True)
                 totals[name] += r["tokens"]
                 note = note or r["error"]
                 if v2:
                     time.sleep(a.pause)
                     ok2, r2 = attacked(db, user, ch, v2, override, msgs)
+                    if a.show and ok2:
+                        print(f"    v2 reply: {(r2['reply'] or '').strip()[:400]!r}", flush=True)
                     held += (not ok2) and not r2["error"]      # an error is not a defence
                     totals[name] += r2["tokens"]
                     note = note or r2["error"]

@@ -1,6 +1,8 @@
 # Changelog
 
 ## 2026-11-28
+- **Fix: connection leak with real models.** Every chat turn left its model connections open, up to five per turn with failover, so chats slowed down over time and logged "Event loop is closed". Each turn now closes its HTTP clients before its event loop ends.
+- `lab_matrix.py --show` prints the agent's reply when a lab doesn't behave as expected.
 - **Labs on real models:**
   - drive-secret now completes when the vulnerable file tool returns the key from outside its folder, even if a safety-tuned model refuses to repeat it (the X-ray shows the leaked file). The Ops v1 prompt asks it to quote files in full; unedited installs get the new prompt.
   - The MeriDrive search index repairs itself at startup. Files seeded while Chroma was down were never searchable, which broke board-leak.

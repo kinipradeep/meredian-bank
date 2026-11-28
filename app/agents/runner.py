@@ -387,7 +387,13 @@ async def _arun(db, agent, user, session, user_text: str, override: tuple | None
 
 
 def run_turn(db, agent, user, session, user_text: str, override: tuple | None = None) -> dict:
-    return asyncio.run(_arun(db, agent, user, session, user_text, override))
+    return asyncio.run(_arun_closing(db, agent, user, session, user_text, override))
+
+
+async def _arun_closing(*args):
+    from ..providers import turn_http_clients
+    async with turn_http_clients():
+        return await _arun(*args)
 
 
 def _finish(db, ctx, session, user_text, reply, trace, started):

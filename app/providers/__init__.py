@@ -1,5 +1,7 @@
 """Model endpoints. Real models go through the LiteLLM gateway (one OpenAI-compatible API for Claude,
 OpenAI, Groq, Gemini, Ollama...). The offline demo model needs no key at all."""
+from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from ..config import get_settings
 from ..models import Provider
 from ..security import decrypt
@@ -50,9 +52,42 @@ def build_chat_model(p: Provider, model: str = "", temperature: float = 0.3, max
     if p.kind == "openai_compat":
         from langchain_openai import ChatOpenAI
         return ChatOpenAI(model=model or p.default_model, base_url=endpoint_url(p, gateway),
-                          api_key=endpoint_key(p, gateway),
+                          api_key=endpoint_key(p, gateway), http_async_client=turn_http_client(),
                           temperature=temperature, max_tokens=max_tokens, timeout=90, max_retries=1)
     raise ProviderError(f"Unknown endpoint kind: {p.kind}")
 
 
-__all__ = ["build_chat_model", "endpoint_key", "ChatResult", "ToolCall", "ProviderError", "DEFAULT_PROVIDERS", "KINDS"]
+# Each chat turn runs in its own event loop (asyncio.run). An async HTTP client's connections belong to the loop
+# that opened them, so every model gets a client made for this turn, and the turn closes them all before its loop
+# ends. Left to the garbage collector they leak sockets on every turn and log "Event loop is closed".
+_TURN_CLIENTS: ContextVar[list | None] = ContextVar("turn_http_clients", default=None)
+
+
+def turn_http_client():
+    """An async HTTP client tracked by the current turn, or None outside a turn (the library then makes its own)."""
+    clients = _TURN_CLIENTS.get()
+    if clients is None:
+        return None
+    import openai
+    c = openai.DefaultAsyncHttpxClient(timeout=90)
+    clients.append(c)
+    return c
+
+
+@asynccontextmanager
+async def turn_http_clients():
+    """Wrap one chat turn: HTTP clients created inside it are closed when it ends."""
+    token = _TURN_CLIENTS.set([])
+    try:
+        yield
+    finally:
+        clients = _TURN_CLIENTS.get() or []
+        _TURN_CLIENTS.reset(token)
+        for c in clients:
+            try:
+                await c.aclose()
+            except Exception:  # noqa: BLE001
+                pass
+
+
+__all__ = ["build_chat_model", "turn_http_client", "turn_http_clients", "endpoint_key", "ChatResult", "ToolCall", "ProviderError", "DEFAULT_PROVIDERS", "KINDS"]
