@@ -108,7 +108,25 @@ The `airange` user's sudo rights are limited to restarting its own services and 
 Create a free project at [cloud.langfuse.com](https://cloud.langfuse.com) (or `us.cloud.langfuse.com`) and copy its API keys into **Admin → Tracing**. The project ID is the part after `/project/` in the project's URL. Traces contain learner prompts, which is another reason the bank's data is fictional.
 
 ### 6. Add real models
-Go to **Admin → LLM gateway → Add a model**. For example:
+
+**Option A: API keys in an env file (recommended).** The gateway already defines `claude-haiku`, `claude-sonnet`, `gemini-flash-lite`, `groq-llama-8b`, `groq-llama-70b` and `groq-gpt-oss-20b` in `deploy/litellm/config.yaml`. They only need keys:
+
+```bash
+sudo nano /etc/airange/providers.env      # ANTHROPIC_API_KEY=… GEMINI_API_KEY=… GROQ_API_KEY=…
+sudo systemctl restart airange-litellm
+```
+
+`install.sh` creates that file (root-only, mode 600) from `deploy/providers.env.example`. Only the LiteLLM service loads it. The app, LLM Guard and the MCP demo server never get the keys, so an agent that a learner tricks into dumping its environment or reading files can't leak them. Leave a key blank to skip that provider. **Test** each model under **Admin → LLM gateway**, then point agents at one:
+
+```bash
+cd /opt/airange && sudo -u airange .venv/bin/python -m app.cli set-agent-model --list
+sudo -u airange .venv/bin/python -m app.cli set-agent-model --model claude-haiku                       # all agents
+sudo -u airange .venv/bin/python -m app.cli set-agent-model --model groq-llama-8b --agents aria-v1,refund-v1
+```
+
+(Or set each agent's endpoint to *LiteLLM gateway* and its model name under **Admin → Agents**.)
+
+**Option B: from the admin portal.** Go to **Admin → LLM gateway → Add a model**. For example:
 - name `claude-haiku`, model string `anthropic/claude-haiku-5-5`, plus your Anthropic key;
 - or `groq-llama-8b` = `groq/llama-3.1-8b-instant`, which is cheap and gullible.
 

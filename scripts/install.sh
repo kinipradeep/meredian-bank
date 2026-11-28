@@ -112,6 +112,14 @@ setenv() { sed -i "s|^$1=.*|$1=$2|" "$APP/.env"; }
 setenv DOMAIN "$DOMAIN"; setenv BASE_URL "https://$DOMAIN"
 # shellcheck disable=SC1091
 set -a; . "$APP/.env"; set +a
+# Provider API keys live outside the repo and outside the app user's reach: only systemd (root) reads
+# this file, and only into the LiteLLM service. Existing keys are kept on re-runs.
+install -d -m 755 /etc/airange
+if [ ! -f /etc/airange/providers.env ]; then
+  install -m 600 -o root -g root "$APP/deploy/providers.env.example" /etc/airange/providers.env
+  echo "Created /etc/airange/providers.env: add your Claude / Gemini / Groq keys there, then"
+  echo "  sudo systemctl restart airange-litellm"
+fi
 
 step "PostgreSQL: role 'range', databases airange + litellm"
 sudo -u postgres psql -qtAc "SELECT 1 FROM pg_roles WHERE rolname='range'" | grep -q 1 || \

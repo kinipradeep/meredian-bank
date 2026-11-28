@@ -6,6 +6,7 @@ PRESETS = [  # (gateway model name, LiteLLM model string, needs key, api_base)
     ("claude-sonnet", "anthropic/claude-sonnet-5-5", True, ""),
     ("groq-llama-8b", "groq/llama-3.1-8b-instant", True, ""),
     ("groq-llama-70b", "groq/llama-3.3-70b-versatile", True, ""),
+    ("groq-gpt-oss-20b", "groq/openai/gpt-oss-20b", True, ""),
     ("gemini-flash-lite", "gemini/gemini-3.1-flash-lite", True, ""),
     ("openai-model", "openai/<model-name>", True, ""),
     ("ollama-llama3", "ollama_chat/llama3.2:3b", False, "http://127.0.0.1:11434"),
