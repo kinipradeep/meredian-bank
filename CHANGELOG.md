@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-28
+- **No more "I couldn't finish that request within my step limit":** when a model keeps asking for tools past the agent's step limit, the agent now makes one last call without tools and answers from what it has gathered. The X-ray records a `max_steps` event. The per-turn token budget, the denial-of-wallet defence, still ends the turn.
 - **Model failover:** a slow (over the time limit), rate-limited, keyless, retired or unreachable model hands the turn to the next available gateway model, then to the offline model.
   - Failing models cool down so later turns skip them.
   - The X-ray shows who answered.

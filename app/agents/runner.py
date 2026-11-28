@@ -32,7 +32,10 @@ from .guards import (detect_injection, external_resources, filter_output, saniti
 from .tools import CONTENT_TOOLS, TOOLS, run_tool
 
 BLOCKED_REPLY = "I can't help with that request. If you need support with your account, please ask me directly."
-GRAPH_NODES = ["input_guard", "retrieve", "model", "tools", "output_guard"]
+GRAPH_NODES = ["input_guard", "retrieve", "model", "tools", "finalize", "output_guard"]
+FINALIZE_NOTE = ("You have used all the tool calls allowed for this turn. Do not call any more tools: answer the user now, "
+                 "using only the information already gathered above. If it isn't enough, say what you found and what "
+                 "is still missing.")
 
 
 class RangeState(TypedDict, total=False):
@@ -210,6 +213,32 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
                                "tool_calls": [{"name": t["name"], "arguments": t["args"]} for t in res.tool_calls]})
         return {"messages": [res], "steps": state.get("steps", 0) + 1, "reply": text}
 
+    async def finalize(state: RangeState):
+        """Step limit reached while the model still wanted tools: one last call, without tools, to answer from what
+        was gathered. The token budget (the denial-of-wallet defence) still applies."""
+        budget = c.get("turn_token_budget")
+        ctx.event("guard", guard="max_steps", detail=f"tool-call limit of {max_steps} steps reached; answering without tools")
+        if budget and trace["usage"]["input"] + trace["usage"]["output"] > int(budget):
+            msg = AIMessage("I couldn't finish that request within my step limit.")
+            return {"messages": [msg], "reply": msg.content}
+        history = list(state["messages"])
+        if history and getattr(history[-1], "tool_calls", None):
+            history = history[:-1]           # drop the tool calls that will never be answered
+        try:
+            res = await llm.ainvoke([SystemMessage(state["system"] + "\n\n" + FINALIZE_NOTE)] + history)
+        except Exception as e:  # noqa: BLE001
+            ctx.event("error", detail=f"final answer failed: {type(e).__name__}: {str(e)[:200]}")
+            msg = AIMessage("I couldn't finish that request within my step limit.")
+            return {"messages": [msg], "reply": msg.content}
+        u = res.usage_metadata or {}
+        trace["usage"]["input"] += u.get("input_tokens", 0)
+        trace["usage"]["output"] += u.get("output_tokens", 0)
+        text = res.content if isinstance(res.content, str) else "".join(
+            p.get("text", "") for p in res.content if isinstance(p, dict))
+        text = text or "I couldn't finish that request within my step limit."
+        trace["steps"].append({"step": state.get("steps", 0) + 1, "text": text, "tool_calls": [], "final": True})
+        return {"messages": [AIMessage(text)], "steps": state.get("steps", 0) + 1, "reply": text}
+
     async def run_tools(state: RangeState):
         last = state["messages"][-1]
         results, msgs = [], []
@@ -279,8 +308,8 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
 
     def after_model(state: RangeState):
         last = state["messages"][-1]
-        if getattr(last, "tool_calls", None) and state.get("steps", 0) < max_steps:
-            return "tools"
+        if getattr(last, "tool_calls", None):
+            return "tools" if state.get("steps", 0) < max_steps else "finalize"
         return "output_guard"
 
     g = StateGraph(RangeState)
@@ -288,11 +317,13 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
     g.add_node("retrieve", retrieve)
     g.add_node("model", call_model)
     g.add_node("tools", run_tools)
+    g.add_node("finalize", finalize)
     g.add_node("output_guard", output_guard)
     g.add_edge(START, "input_guard")
     g.add_conditional_edges("input_guard", after_guard, ["retrieve", "output_guard"])
     g.add_edge("retrieve", "model")
-    g.add_conditional_edges("model", after_model, ["tools", "output_guard"])
+    g.add_conditional_edges("model", after_model, ["tools", "finalize", "output_guard"])
+    g.add_edge("finalize", "output_guard")
     g.add_edge("tools", "model")
     g.add_edge("output_guard", END)
     return g.compile()
