@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Update the Meridian Bank range on this VM to the latest code on GitHub, using the settings in
+# /etc/airange/range.env. Data, secrets and the admin password are kept.
+#   sudo meridian-update              latest main
+#   sudo meridian-update <branch>     another branch
+# Installed to /usr/local/bin by the installer. Repo: REPO_URL in /etc/airange/range.env, or the default below.
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "Run it as root: sudo meridian-update"; exit 1; }
+CFG=/etc/airange/range.env
+[ -f "$CFG" ] || { echo "No $CFG yet: install once with meridian-range-installer.sh and a range.env first."; exit 1; }
+REPO=$(grep -E '^REPO_URL=' "$CFG" | cut -d= -f2- | tr -d '"'"'" || true)
+REPO=${REPO:-https://github.com/kinipradeep/meredian-bank.git}
+BRANCH=${1:-main}
+SRC=/opt/airange-src
+command -v git >/dev/null || apt-get install -y -qq git
+if [ -d "$SRC/.git" ]; then
+  git -C "$SRC" remote set-url origin "$REPO"
+  git -C "$SRC" fetch -q --depth 1 origin "$BRANCH"
+  git -C "$SRC" reset -q --hard FETCH_HEAD
+  git -C "$SRC" clean -qfdx
+else
+  rm -rf "$SRC"; git clone -q --depth 1 --branch "$BRANCH" "$REPO" "$SRC"
+fi
+NEW=$(git -C "$SRC" log -1 --format='%h (%cs) %s')
+OLD=$(cat /opt/airange/VERSION 2>/dev/null || echo none)
+echo "Installed: $OLD"
+echo "GitHub:    $NEW"
+echo "$NEW" > "$SRC/VERSION"
+exec bash "$SRC/scripts/install.sh" --config "$CFG" --source "$SRC"

@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-28
+- **`sudo meridian-update`:** updates the VM from GitHub with the saved `range.env`, so there are no more installer files to copy. Optional `REPO_URL` setting.
 - **OWASP Top 10 for LLM Applications 2026 in the range:**
   - every lab page shows its categories, why the risk matters, and (after completion or the answer) how v2 mitigates it;
   - the board shows chips, and `/labs/owasp` shows coverage by category;

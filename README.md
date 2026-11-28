@@ -77,7 +77,7 @@ One file holds the installer and all of the range's code, so the VM never needs 
    ```
    It takes 10–20 minutes and ends by printing the admin login. Run it without a `range.env` and it creates one for you to fill in.
 
-**To change a setting**, edit `range.env` (or `/etc/airange/range.env` on the VM) and run the installer again. **To update**, copy a newer installer to the VM and run it. Your data, secrets and admin password are kept on every run.
+**To update**, run `sudo meridian-update` on the VM. It pulls the latest `main` from GitHub and reinstalls with `/etc/airange/range.env`. **To change a setting**, edit `/etc/airange/range.env`, then run `sudo meridian-update`. Your data, secrets and admin password are kept on every run.
 
 **What `range.env` does:** provider keys go to `/etc/airange/providers.env`, which only the LiteLLM gateway can read. `AGENT_MODEL` points every agent at that model. `LLM_GUARD=auto` installs LLM Guard only on VMs with 6 GB or more, and turns it off on smaller ones to save memory. `ADMIN_PASSWORD` only sets a password when the account doesn't have one yet; after that, change it in **Admin → My account**.
 

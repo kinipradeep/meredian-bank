@@ -52,7 +52,7 @@ done
 # $ ! & etc.); quote a value that contains " #", which otherwise starts a comment.
 CFG_KEYS="DOMAIN ADMIN_EMAIL ADMIN_PASSWORD GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET ALLOWED_EMAIL_DOMAINS
   GROQ_API_KEY GEMINI_API_KEY ANTHROPIC_API_KEY AGENT_MODEL LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY LANGFUSE_HOST
-  LLM_GUARD OLLAMA"
+  LLM_GUARD OLLAMA REPO_URL"
 for k in $CFG_KEYS; do printf -v "CFG_$k" '%s' ""; done
 if [ -n "$CONFIG" ]; then
   [ -f "$CONFIG" ] || { echo "Settings file not found: $CONFIG"; exit 1; }
@@ -284,6 +284,8 @@ printf '[Service]\nEnvironmentFile=/etc/caddy/airange.env\n' > /etc/systemd/syst
 install -m 644 "$APP/deploy/caddy/Caddyfile" /etc/caddy/Caddyfile
 systemctl daemon-reload && systemctl enable -q caddy && systemctl restart caddy
 
+install -m 755 "$APP/scripts/meridian-update" /usr/local/bin/meridian-update   # "sudo meridian-update" pulls GitHub
+
 step "Nightly backups (02:15) and retention purge (02:45)"
 ( crontab -u airange -l 2>/dev/null | grep -v -e backup.sh -e purge-data
   echo "15 2 * * * $APP/scripts/backup.sh >> $APP/backups/backup.log 2>&1"
@@ -325,9 +327,8 @@ for _ in $(seq 1 60); do curl -fs http://127.0.0.1:4000/health/liveliness >/dev/
 
 IP=$(curl -fs4 ifconfig.me || hostname -I | awk '{print $1}')
 if [ -n "$SOURCE" ]; then
-  UPDATES_TEXT=" 3. Updates: copy a newer meridian-range-installer.sh to this VM and run
-      sudo bash meridian-range-installer.sh
-    Settings are read from /etc/airange/range.env: edit it there and re-run to change them.
+  UPDATES_TEXT=" 3. Updates: sudo meridian-update   (pulls the latest code from GitHub and reinstalls)
+    Settings are read from /etc/airange/range.env: edit it there, then run sudo meridian-update.
 "
 else
   UPDATES_TEXT=" 3. Updates: re-run this script any time, or let GitHub Actions deploy every push to main.
