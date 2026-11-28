@@ -5,3 +5,4 @@ backups/
 .pytest_cache/
 .venv/
 providers.env
+dist/

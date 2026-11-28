@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-28
+- **Single-file installer:** `scripts/make-installer.sh` builds `meridian-range-installer.sh`, which bundles the code (no GitHub needed on the VM) and reads every setting from one `range.env` file:
+  - domain (or `<IP>.sslip.io` when blank) and admin account;
+  - Google sign-in and Langfuse keys;
+  - Groq, Gemini and Claude keys, plus the model all agents should use;
+  - LLM Guard on, off or automatic by RAM.
+- CI builds the installer on every push to `main` (Actions → Artifacts).
+- `install.sh` gains `--config` and `--source`. Settings values are written literally (passwords may contain `$`, `&`, `!`), and the admin password from `range.env` never overwrites an existing one.
+
 ## 2026-11-26
 - **Administrators page:** add admins by Google sign-in or a temporary password (forced change at first sign-in), remove admin rights with last-admin and `ADMIN_EMAILS` guards, reset passwords; all audited.
 - **Learner progress (Admin):** learner × lab grid with completion, steps, answers and activity; per-learner timeline; CSV export; conversations filtered by learner.

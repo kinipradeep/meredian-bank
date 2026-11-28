@@ -31,6 +31,17 @@ jobs:
           for u in deploy/systemd/*.service; do grep -q '^ExecStart=' "$u"; done
       - name: Import check (app starts without services)
         run: python -c "import app.main"
+      - name: Build the single-file installer
+        run: scripts/make-installer.sh
+      - name: Upload the installer (Actions run > Artifacts)
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: meridian-range-installer
+          path: |
+            dist/meridian-range-installer.sh
+            dist/range.env.example
+          retention-days: 90
 
   deploy:
     needs: test

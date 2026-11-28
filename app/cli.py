@@ -32,6 +32,8 @@ def main(argv=None) -> int:
     c.add_argument("--password", default="")
     c.add_argument("--name", default="")
     c.add_argument("--keep-existing", action="store_true")
+    c.add_argument("--keep-password", action="store_true",
+                   help="never replace an existing password, even if --password/ADMIN_PASSWORD is given")
     r = sub.add_parser("remove-password", help="remove a local password (Google sign-in only)")
     r.add_argument("--email", required=True)
     m = sub.add_parser("set-agent-model", help="point agents at an endpoint + model (default: LiteLLM gateway)")
@@ -60,7 +62,7 @@ def main(argv=None) -> int:
             print(f"Password removed for {email}.")
             return 0
         a.password = a.password or os.environ.get("ADMIN_PASSWORD", "")
-        if user and user.password_hash and a.keep_existing and not a.password:
+        if user and user.password_hash and ((a.keep_existing and not a.password) or a.keep_password):
             print(f"Admin {email} already has a password; kept it.")
             return 0
         password = a.password or _generate()

@@ -61,10 +61,31 @@ The seeded agents use the **offline demo model**, so every attack works before y
 
 **Sizing:** a **Linode 8 GB** (Shared CPU) runs everything. Use 4 GB if you skip LLM Guard (`--no-llm-guard`); LLM Guard alone needs about 2–3 GB of RAM once its models load.
 
-### 1. Create the VM and point DNS
+### Easiest: the single-file installer
+One file holds the installer and all of the range's code, so the VM never needs to reach GitHub. Your settings go in one file, `range.env`.
+
+1. **Get the two files.** Download `meridian-range-installer.sh` and `range.env.example` from the latest **Actions** run on `main` (*Artifacts → meridian-range-installer*), or build them yourself with `scripts/make-installer.sh` (they land in `dist/`).
+2. **Fill in the settings.** Copy `range.env.example` to `range.env` and set at least `ADMIN_EMAIL`. Optionally set `DOMAIN` (leave it blank to use `<VM-IP>.sslip.io`, which needs no DNS), `ADMIN_PASSWORD`, `GROQ_API_KEY` with `AGENT_MODEL=groq-llama-8b`, and the Google sign-in keys. Every setting is explained in the file.
+3. **Copy both files to the VM** (Ubuntu 24.04, as root):
+   ```bash
+   scp meridian-range-installer.sh range.env root@<VM-IP>:
+   ```
+4. **Run it:**
+   ```bash
+   ssh root@<VM-IP>
+   sudo bash meridian-range-installer.sh
+   ```
+   It takes 10–20 minutes and ends by printing the admin login. Run it without a `range.env` and it creates one for you to fill in.
+
+**To change a setting**, edit `range.env` (or `/etc/airange/range.env` on the VM) and run the installer again. **To update**, copy a newer installer to the VM and run it. Your data, secrets and admin password are kept on every run.
+
+**What `range.env` does:** provider keys go to `/etc/airange/providers.env`, which only the LiteLLM gateway can read. `AGENT_MODEL` points every agent at that model. `LLM_GUARD=auto` installs LLM Guard only on VMs with 6 GB or more, and turns it off on smaller ones to save memory. `ADMIN_PASSWORD` only sets a password when the account doesn't have one yet; after that, change it in **Admin → My account**.
+
+### Or: from GitHub, one command
+#### 1. Create the VM and point DNS
 Create an Ubuntu 24.04 Linode. Add A records for `range.example.com` and `gateway.range.example.com`, both pointing to its IP.
 
-### 2. Install and deploy: one command, as root on the VM
+#### 2. Install and deploy, as root on the VM
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kinipradeep/meredian-bank/main/scripts/install.sh \
   | bash -s -- range.example.com you@example.com
@@ -88,14 +109,14 @@ sudo -u airange bash -c 'cd /opt/airange && set -a && . ./.env && .venv/bin/pyth
 
 **To update, run the same command again.** It pulls the latest `main` from GitHub, reinstalls and restarts everything, and keeps your `.env` and data. (If you ever make the repo private, pass an SSH `--repo git@github.com:...` URL; the script then prints a read-only deploy key to add on GitHub.)
 
-### 3. Google sign-in
+#### 3. Google sign-in
 In Google Cloud Console, go to **APIs & Services**. Set up the OAuth consent screen (External, scopes `openid email profile`), then create an **OAuth client ID** of type Web application with:
 - origin `https://range.example.com`
 - redirect URI `https://range.example.com/auth/callback`
 
 Put the ID and secret in `/opt/airange/.env`, then run `systemctl restart airange-app`.
 
-### 4. Optional: deploy automatically on every push
+#### 4. Optional: deploy automatically on every push
 Re-running `install.sh` is enough to update. For hands-off updates, add the secrets the installer printed (`VM_HOST`, `VM_USER=airange`, `VM_SSH_KEY`, `VM_KNOWN_HOSTS`) under GitHub → *Settings → Secrets and variables → Actions*.
 
 From then on, every push to **main** runs `.github/workflows/ci-cd.yml`:
@@ -104,10 +125,10 @@ From then on, every push to **main** runs `.github/workflows/ci-cd.yml`:
 
 The `airange` user's sudo rights are limited to restarting its own services and reloading Caddy. You can add required reviewers to the `production` environment to approve each deploy.
 
-### 5. Tracing (Langfuse Cloud)
+#### 5. Tracing (Langfuse Cloud)
 Create a free project at [cloud.langfuse.com](https://cloud.langfuse.com) (or `us.cloud.langfuse.com`) and copy its API keys into **Admin → Tracing**. The project ID is the part after `/project/` in the project's URL. Traces contain learner prompts, which is another reason the bank's data is fictional.
 
-### 6. Add real models
+#### 6. Add real models
 
 **Option A: API keys in an env file (recommended).** The gateway already defines `claude-haiku`, `claude-sonnet`, `gemini-flash-lite`, `groq-llama-8b`, `groq-llama-70b` and `groq-gpt-oss-20b` in `deploy/litellm/config.yaml`. They only need keys:
 
