@@ -102,6 +102,7 @@ if [ "$MEM_MB" -lt 3500 ]; then echo "WARNING: ${MEM_MB} MB of RAM is below the 
 APP=/opt/airange
 DATA=/var/lib/airange
 LITELLM_VERSION=1.111.0
+PRISMA_VERSION=0.11.0           # see the LiteLLM step
 LLM_GUARD_REF=168c103            # protectai/llm-guard: final release (0.3.16; the project is archived)
 [ "$(id -u)" = 0 ] || { echo "Run as root."; exit 1; }
 if [ -n "$ADMIN_PW" ] && [ ${#ADMIN_PW} -lt 12 ]; then echo "The admin password (--admin-password / ADMIN_PASSWORD) must be at least 12 characters."; exit 1; fi
@@ -230,10 +231,19 @@ step "LiteLLM gateway $LITELLM_VERSION"
 install -d -o airange -g airange /opt/litellm
 [ -d /opt/litellm/venv ] || as_app python3 -m venv /opt/litellm/venv
 as_app /opt/litellm/venv/bin/pip install -q --upgrade pip
-as_app /opt/litellm/venv/bin/pip install -q "litellm[proxy,extra_proxy]==$LITELLM_VERSION"
+# LiteLLM allows prisma>=0.11,<1.0, but its query engine imports prisma.builder, which only Prisma 0.11/0.12
+# generate (0.13+ renamed it to _builder). Pin 0.11.0, the version LiteLLM's own image uses, and replace any
+# other version together with the client files it generated.
+if [ "$(as_app /opt/litellm/venv/bin/python -c 'import importlib.metadata as m; print(m.version("prisma"))' 2>/dev/null)" != "$PRISMA_VERSION" ]; then
+  as_app /opt/litellm/venv/bin/pip uninstall -q -y prisma >/dev/null 2>&1 || true
+  rm -rf /opt/litellm/venv/lib/python3*/site-packages/prisma
+fi
+as_app /opt/litellm/venv/bin/pip install -q "litellm[proxy,extra_proxy]==$LITELLM_VERSION" "prisma==$PRISMA_VERSION"
 # LiteLLM's database layer needs the Prisma client generated once per install (it fails to start otherwise).
-as_app sh -c "cd /opt/litellm/venv/lib/python3*/site-packages/litellm/proxy && HOME=$DATA/litellm PATH=/opt/litellm/venv/bin:\$PATH prisma generate --schema schema.prisma" \
-  || echo "WARNING: 'prisma generate' failed; the LiteLLM gateway will not start. See docs/TROUBLESHOOTING.md."
+as_app sh -c "cd /opt/litellm/venv/lib/python3*/site-packages/litellm/proxy && HOME=$DATA/litellm PATH=/opt/litellm/venv/bin:\$PATH prisma generate --schema schema.prisma" >/dev/null \
+  && as_app /opt/litellm/venv/bin/python -c "import prisma.builder, prisma.client" \
+  && echo "Prisma client generated." \
+  || echo "WARNING: the Prisma client is incomplete; the LiteLLM gateway will not start. See docs/TROUBLESHOOTING.md."
 
 if [ "$WITH_GUARD" = 1 ]; then
   step "LLM Guard API (CPU; downloads ~2 GB of models on first scan)"
