@@ -102,3 +102,16 @@ def lab_agent(slug: str, request: Request, db: Session = Depends(get_db), user: 
         return RedirectResponse("/lab", status_code=303)
     return templates.TemplateResponse(request, "bank/chat.html", _ctx(
         request, db, user, agents=[agent], agent=agent, title=agent.name, subtitle=agent.description, surface="lab"))
+
+
+@router.get("/brand/logo")
+def brand_logo():
+    """The platform logo (Admin > Settings > Branding, or BRAND_LOGO_URL in range.env)."""
+    from fastapi.responses import FileResponse
+    from ..branding import logo_file, sniff
+    f = logo_file()
+    if not f:
+        raise HTTPException(404)
+    mime = (sniff(f.read_bytes()[:16]) or ("png", "image/png"))[1]
+    return FileResponse(f, media_type=mime, headers={"Cache-Control": "public, max-age=86400",
+                                                     "X-Content-Type-Options": "nosniff"})

@@ -3,32 +3,62 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="csrf-token" content="{{ csrf_token(request) }}">
-<title>{% block title %}Meridian Bank{% endblock %}</title>
+<meta name="theme-color" content="#0D3B45">
+{% set b = brand() %}
+<title>{% block title %}Meridian Bank{% endblock %} · {{ b.name }}</title>
+<link rel="icon" href="/static/brand/favicon.png">
 <link rel="stylesheet" href="/static/css/bank.css">
 </head>
-<body>
-{% if banner %}<div class="training-banner">{{ banner }}</div>{% endif %}
-<header class="topbar">
-  <a class="brand" href="/">
-    <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#C9A227"/><path d="M8 22V10l8 7 8-7v12" fill="none" stroke="#0E2A47" stroke-width="3" stroke-linejoin="round"/></svg>
-    <span>Meridian <b>Bank</b></span>
+<body class="{% block bodyclass %}{% endblock %}">
+<a class="skip" href="#main">Skip to content</a>
+<header class="range-bar">
+  <a class="range-brand" href="{{ '/labs' if user else '/' }}" aria-label="{{ b.name }}: home">
+    <img class="range-logo" src="{{ b.logo }}" alt="{{ b.name }}">
+    <span class="range-name">AI Cyber Range</span>
   </a>
   {% if user %}
-  <nav class="mainnav">
-    <a href="/">Dashboard</a><a href="/transactions">Transactions</a><a href="/support">Help &amp; support</a>
-    <a href="/disputes">Disputes</a><a href="/labs" class="lab-link">Labs</a><a href="/lab" class="lab-link">Agents &amp; MCP</a>
-    {% if user.is_admin %}<a href="/admin" class="admin-link">Admin</a>{% endif %}
+  <nav class="range-nav" aria-label="Training range">
+    <a href="/labs">Labs</a><a href="/labs/owasp">OWASP map</a><a href="/lab">Agents &amp; MCP</a>
+    {% if user.is_admin %}<a href="/admin" class="range-admin">Admin</a>{% endif %}
   </nav>
-  <div class="usermenu">
-    {% if user.picture %}<img src="{{ user.picture }}" alt="" class="avatar">{% endif %}
+  <div class="range-user">
+    {% if user.picture %}<img src="{{ user.picture }}" alt="" class="avatar">{% else %}<span class="avatar initials" aria-hidden="true">{{ (user.name or user.email)[:1]|upper }}</span>{% endif %}
     <span class="uname">{{ user.name or user.email }}<small>{{ user.customer_id }} · {{ user.role }}</small></span>
     <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="linkbtn">Sign out</button></form>
   </div>
   {% endif %}
 </header>
-<main class="page">{% block content %}{% endblock %}</main>
-<footer class="foot">Meridian Bank is a fictional bank used for AI security training. No real accounts, money or customers.
-  <nav class="foot-links"><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable use</a><a href="/legal/terms">Terms</a>{% if user %}<a href="/legal/my-data">Your data</a>{% endif %}</nav></footer>
+{% if banner %}<div class="training-banner">{{ banner }}</div>{% endif %}
+<header class="bank-bar">
+  <a class="bank-brand" href="/">
+    <svg class="bank-mark" width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="10" fill="#0D3B45"/><path d="M17 6a11 11 0 1 0 0 22a11 11 0 1 0 0-22zm0 0c-4 3-4 19 0 22m0-22c4 3 4 19 0 22M6.5 17h21" fill="none" stroke="#E3A72F" stroke-width="1.6"/></svg>
+    <span>Meridian Bank</span>
+  </a>
+  {% if user %}
+  <nav class="bank-nav" aria-label="Meridian Bank">
+    {% set here = request.url.path %}
+    <a href="/" class="{{ 'on' if here == '/' }}">Home</a>
+    <a href="/transactions" class="{{ 'on' if here.startswith('/transactions') }}">Transactions</a>
+    <a href="/disputes" class="{{ 'on' if here.startswith('/disputes') }}">Disputes</a>
+    <a href="/support" class="{{ 'on' if here.startswith('/support') }}">Help</a>
+  </nav>
+  {% endif %}
+</header>
+<main class="page" id="main">{% block content %}{% endblock %}</main>
+<footer class="foot">
+  <p>Meridian Bank is fictional: no real accounts, money or customers. Part of the {{ b.name }}.</p>
+  <nav class="foot-links"><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable use</a><a href="/legal/terms">Terms</a>{% if user %}<a href="/legal/my-data">Your data</a>{% endif %}</nav>
+</footer>
+{% if user %}
+<nav class="tabbar" aria-label="Quick navigation">
+  {% set here = request.url.path %}
+  <a href="/" class="{{ 'on' if here == '/' }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>Home</a>
+  <a href="/transactions" class="{{ 'on' if here.startswith('/transactions') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>Transactions</a>
+  <a href="/disputes" class="{{ 'on' if here.startswith('/disputes') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>Disputes</a>
+  <a href="/support" class="{{ 'on' if here.startswith('/support') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Help</a>
+  <a href="/labs" class="lab {{ 'on' if here.startswith('/labs') or here.startswith('/ctf') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg>Labs</a>
+</nav>
+{% endif %}
 {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,10 +1,12 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}Admin{% endblock %} · AI Security Range</title>
+{% set b = brand() %}
+<title>{% block title %}Admin{% endblock %} · {{ b.name }}</title>
+<link rel="icon" href="/static/brand/favicon.png">
 <link rel="stylesheet" href="/static/css/admin.css"></head>
 <body>
 <aside class="side">
-  <div class="logo">AI Security <b>Range</b><small>Admin</small></div>
+  <div class="logo"><span class="logo-plate"><img src="{{ b.logo }}" alt="{{ b.name }}"></span>AI Cyber Range<small>Admin</small></div>
   <nav>
     <a href="/admin">Dashboard</a>
     <span class="grp">Agents</span>

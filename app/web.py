@@ -51,6 +51,8 @@ def mode_class(agent) -> str:
 templates.env.globals["mode_label"] = mode_label
 from .seed import owasp as _owasp  # noqa: E402
 templates.env.globals["owasp_for"] = _owasp.for_lab
+from .branding import brand as _brand  # noqa: E402
+templates.env.globals["brand"] = _brand
 templates.env.globals["owasp_edition"] = _owasp.EDITION
 templates.env.globals["mode_class"] = mode_class
 templates.env.filters["inr"] = _inr

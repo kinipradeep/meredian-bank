@@ -1,6 +1,10 @@
 # Changelog
 
 ## 2026-11-28
+- **New look: CollabAce AI Cyber Range.**
+  - A white CollabAce bar (logo bundled) above Meridian Bank's own redesigned app: petrol, teal and turmeric palette; Mukta type; an account card with meridian lines; quick actions; transactions as a list; a phone tab bar.
+  - Branding name and logo can be set in Admin → Settings (PNG, JPEG or WebP only).
+  - New landing and sign-in pages.
 - **`sudo meridian-update`:** updates the VM from GitHub with the saved `range.env`, so there are no more installer files to copy. Optional `REPO_URL` setting.
 - **OWASP Top 10 for LLM Applications 2026 in the range:**
   - every lab page shows its categories, why the risk matters, and (after completion or the answer) how v2 mitigates it;

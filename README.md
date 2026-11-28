@@ -1,4 +1,4 @@
-# Meridian Bank · AI Security Range
+# CollabAce AI Cyber Range · Meridian Bank
 
 A self-hosted training range for AI vulnerabilities, built from open-source components. Learners sign in with Google and attack **Meridian Bank**, a fictional bank with a RAG support assistant, an agentic refunds desk and a concierge that uses third-party MCP tools. Every agent has a **vulnerable** and a **hardened** version. Admins manage everything (models, keys, agents, MCP servers, guardrails, traces, vector database) from one portal.
 
@@ -160,6 +160,14 @@ sudo -u airange .venv/bin/python -m app.cli set-agent-model --model groq-gpt-oss
 | Langfuse Cloud | your Langfuse account |
 
 **Day-to-day:** `journalctl -u airange-app -f` (or another service name) for logs; `systemctl restart airange-<name>` to restart; `/opt/airange/scripts/backup.sh` to back up by hand.
+
+## Look and branding
+The training platform is branded **CollabAce AI Cyber Range** (a white bar with the CollabAce logo, plus Labs, OWASP map, Agents & MCP and Admin). Below it, **Meridian Bank** has its own look:
+- a modern, mobile-first Indian retail-banking style with an account card, quick actions and transactions as a list;
+- a bottom tab bar on phones;
+- the Mukta typeface (Ek Type, SIL Open Font License, bundled in `app/static/fonts`).
+
+Change the platform name or upload another logo (PNG, JPEG or WebP) in **Admin → Settings → Branding**. The bundled logo is in `app/static/brand`.
 
 ## OWASP Top 10 mapping
 Every lab is mapped to the **OWASP Top 10 for LLM Applications 2026**:

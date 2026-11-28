@@ -5,6 +5,18 @@
   <label class="full">Banner shown on every bank page <input name="banner" value="{{ banner }}"></label>
   <label class="check full"><input type="checkbox" name="xray" {{ 'checked' if xray }}> Let learners see the X-ray panel (admins always see it)</label>
   <div class="actions full"><button class="btn">Save</button></div></form>
+{% set b = brand() %}
+<section class="card"><h2>Branding</h2>
+<p class="muted">The training platform's name and logo, shown above the fictional bank on every page.</p>
+{% if b.logo %}<p><img src="{{ b.logo }}" alt="Current logo" class="brand-preview"></p>{% endif %}
+<form method="post" action="/admin/settings/branding" enctype="multipart/form-data" class="grid-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label class="full">Platform name <input name="name" value="{{ b.name }}" maxlength="80"></label>
+  <label class="full">Logo (PNG, JPEG or WebP, under 1 MB; a wide logo on a transparent or dark background works best) <input type="file" name="logo" accept="image/png,image/jpeg,image/webp"></label>
+  {% if b.custom_logo %}<label class="check full"><input type="checkbox" name="remove_logo"> Remove the uploaded logo (go back to the CollabAce logo)</label>{% endif %}
+  <div class="actions full"><button class="btn">Save branding</button></div>
+</form>
+<p class="muted small">Without an upload, the CollabAce logo bundled with the range is used. Uploaded logos are kept across updates.</p></section>
 <section class="card"><h2>Set in the server's .env file</h2>
 <p>Google OAuth client, admin emails, allowed email domains, daily message cap per learner, default embedding model, and encryption keys are configured in <span class="mono">.env</span> on the server. Restart the app after changing them.</p></section>
 {% endblock %}

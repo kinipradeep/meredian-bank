@@ -1,18 +1,26 @@
 {% extends "base_bank.html" %}
+{% block title %}Welcome{% endblock %}
+{% block bodyclass %}landing{% endblock %}
 {% block content %}
-<section class="hero">
-  <div>
-    <h1>Banking that keeps up with you.</h1>
-    <p>Savings, cards, loans and 24x7 help from Aria, our AI assistant.</p>
-    <a class="btn gold" href="/login">Sign in</a>
+{% set b = brand() %}
+<section class="land-hero">
+  <div class="land-copy">
+    <h1>Attack a bank's AI.<br>Then learn how to stop it.</h1>
+    <p>Meridian Bank runs AI assistants for support, refunds, loans, payments and operations. In the {{ b.name }} you get them to leak secrets, move money and follow hidden instructions, then repeat each attack on a hardened version and see which control stops you.</p>
+    <a class="btn turmeric" href="/login">Sign in to start</a>
   </div>
-  <div class="hero-card">
-    <div class="mini-card"><span>Meridian Platinum</span><b>•••• 4821</b><small>Valid thru 08/29</small></div>
+  <div class="land-card" aria-hidden="true">
+    <div class="acct-hero demo">
+      <div class="acct-hero-top"><span>Savings account</span><span class="acct-no">6020 0900 0001</span></div>
+      <p class="acct-hero-label">Available balance</p>
+      <p class="acct-hero-bal">₹2,48,350.00</p>
+      <div class="acct-hero-foot"><span>Meridian Bank</span><span>Fictional · for training</span></div>
+    </div>
   </div>
 </section>
-<section class="features">
-  <div><h3>Aria, your assistant</h3><p>Ask about fees, cards and your transactions any time.</p></div>
-  <div><h3>Fast disputes</h3><p>Our Refund Desk agent resolves card disputes in minutes.</p></div>
-  <div><h3>Training lab</h3><p>This is a safe range for practising AI security attacks and defences.</p></div>
+<section class="land-points">
+  <div><h2>21 guided labs</h2><p>From prompt injection to poisoned tools, each with steps, a worked answer and the defence.</p></div>
+  <div><h2>Mapped to OWASP</h2><p>Every lab maps to the OWASP Top 10 for LLM Applications 2026.</p></div>
+  <div><h2>See inside the model</h2><p>The X-ray shows what the agent was told, what it retrieved and which tools it called.</p></div>
 </section>
 {% endblock %}

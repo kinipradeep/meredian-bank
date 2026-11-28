@@ -3,12 +3,13 @@
 {% block content %}
 <h1>Transactions</h1>
 <section class="panel">
-  <table class="txns">
-    <tr><th>Date</th><th>Description</th><th>Category</th><th>Reference</th><th class="r">Amount</th><th>Status</th><th></th></tr>
-    {% for t in txns %}<tr><td>{{ t.posted_at.strftime('%d %b %Y') }}</td><td>{{ t.description }}</td><td>{{ t.category }}</td><td class="mono">{{ t.txn_ref }}</td>
-      <td class="r {{ 'neg' if t.amount < 0 else 'pos' }}">{{ t.amount|inr }}</td><td><span class="status {{ t.status }}">{{ t.status }}</span></td>
-      <td>{% if t.amount < 0 and t.status == 'posted' %}<a class="small" href="/disputes">Dispute</a>{% endif %}</td></tr>{% endfor %}
-  </table>
+  <ul class="txlist">
+    {% for t in txns %}<li>
+      <span class="tx-icon {{ 'in' if t.amount > 0 }}" aria-hidden="true">{{ (t.category or t.description)[:1]|upper }}</span>
+      <span class="tx-main"><b>{{ t.description }}</b><small>{{ t.posted_at.strftime('%d %b %Y') }} · {{ t.category }} · {{ t.txn_ref }}{% if t.status != 'posted' %} · <span class="status {{ t.status }}">{{ t.status.replace('_', ' ') }}</span>{% endif %}</small></span>
+      <span class="tx-amt {{ 'pos' if t.amount > 0 }}">{{ '+' if t.amount > 0 }}{{ t.amount|inr }}{% if t.amount < 0 and t.status == 'posted' %}<a class="tx-act" href="/disputes">Dispute</a>{% endif %}</span>
+    </li>{% else %}<li class="empty">No transactions yet.</li>{% endfor %}
+  </ul>
 </section>
 {% if refunds %}
 <section class="panel"><h2>Your refund requests</h2>

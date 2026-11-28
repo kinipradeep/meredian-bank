@@ -1,23 +1,45 @@
 {% extends "base_bank.html" %}
-{% block title %}Dashboard · Meridian Bank{% endblock %}
+{% block title %}Home · Meridian Bank{% endblock %}
 {% block content %}
-<h1 class="greet">Good day, {{ (customer.full_name if customer else user.name).split(' ')[0] }}</h1>
-<div class="grid-3">
-  {% for a in accounts %}
-  <div class="acct {{ 'credit' if a.balance < 0 else '' }}">
-    <span class="kind">{{ a.kind }}</span><span class="num">{{ a.account_no }}</span>
-    <b class="bal">{{ a.balance|inr }}</b>
-    <small>{{ 'Outstanding' if a.balance < 0 else 'Available balance' }}</small>
+{% set first = (customer.full_name if customer else user.name or 'there').split(' ')[0] %}
+{% set main = (accounts|selectattr('balance', '>=', 0)|list or accounts)|first %}
+<p class="greet">Namaste, {{ first }}</p>
+<div class="home-top">
+  {% if main %}
+  <section class="acct-hero" aria-label="{{ main.kind }} account">
+    <div class="acct-hero-top"><span>{{ main.kind|capitalize }} account</span><span class="acct-no">{{ main.account_no }}</span></div>
+    <p class="acct-hero-label">Available balance</p>
+    <p class="acct-hero-bal">{{ main.balance|inr }}</p>
+    <div class="acct-hero-foot"><span>{{ customer.full_name if customer else user.name }}</span><span>Meridian Bank · IFSC MRDN0000101</span></div>
+  </section>
+  {% endif %}
+  <div class="acct-others">
+    {% for a in accounts if a != main %}
+    <div class="acct-tile {{ 'credit' if a.balance < 0 }}">
+      <span class="acct-tile-kind">{{ a.kind|capitalize }}</span>
+      <b>{{ a.balance|inr }}</b>
+      <small>{{ 'Outstanding' if a.balance < 0 else 'Available' }} · {{ a.account_no }}</small>
+    </div>
+    {% endfor %}
+    <a class="acct-tile aria-tile" href="/support"><span class="acct-tile-kind">Ask Aria</span><span>Fees, cards, your transactions, disputes. Aria is the bank's AI assistant.</span></a>
   </div>
-  {% endfor %}
-  <div class="acct cta"><span class="kind">Need help?</span><p>Aria can explain fees, check transactions and raise disputes.</p><a class="btn gold" href="/support">Chat with Aria</a></div>
 </div>
+
+<nav class="quick" aria-label="Quick actions">
+  <a href="/transactions"><span class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg></span>Statement</a>
+  <a href="/disputes"><span class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg></span>Raise a dispute</a>
+  <a href="/support"><span class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></span>Ask Aria</a>
+  <a href="/labs" class="lab"><span class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg></span>Labs</a>
+</nav>
+
 <section class="panel">
-  <div class="panel-head"><h2>Recent transactions</h2><a href="/transactions">View all</a></div>
-  <table class="txns">
-    <tr><th>Date</th><th>Description</th><th>Reference</th><th class="r">Amount</th><th>Status</th></tr>
-    {% for t in txns %}<tr><td>{{ t.posted_at.strftime('%d %b') }}</td><td>{{ t.description }}</td><td class="mono">{{ t.txn_ref }}</td>
-      <td class="r {{ 'neg' if t.amount < 0 else 'pos' }}">{{ t.amount|inr }}</td><td><span class="status {{ t.status }}">{{ t.status }}</span></td></tr>{% endfor %}
-  </table>
+  <div class="panel-head"><h2>Recent transactions</h2><a href="/transactions">See all</a></div>
+  <ul class="txlist">
+    {% for t in txns %}<li>
+      <span class="tx-icon {{ 'in' if t.amount > 0 }}" aria-hidden="true">{{ (t.category or t.description)[:1]|upper }}</span>
+      <span class="tx-main"><b>{{ t.description }}</b><small>{{ t.posted_at.strftime('%d %b') }} · {{ t.txn_ref }}{% if t.status != 'posted' %} · <span class="status {{ t.status }}">{{ t.status.replace('_', ' ') }}</span>{% endif %}</small></span>
+      <span class="tx-amt {{ 'pos' if t.amount > 0 }}">{{ '+' if t.amount > 0 }}{{ t.amount|inr }}</span>
+    </li>{% else %}<li class="empty">No transactions yet.</li>{% endfor %}
+  </ul>
 </section>
 {% endblock %}

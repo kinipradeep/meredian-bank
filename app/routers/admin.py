@@ -689,6 +689,30 @@ def settings_page(request: Request, db: Session = Depends(get_db), user: User = 
                   xray=(setting(db, "learner_xray", {}) or {}).get("enabled", True))
 
 
+@router.post("/settings/branding")
+async def settings_branding(request: Request, db: Session = Depends(get_db), user: User = Depends(require_admin)):
+    from .. import branding
+    form = await request.form()
+    verify_csrf(request, form.get("csrf", ""))
+    branding.set_name(db, str(form.get("name") or ""))
+    msg = "Branding saved."
+    if form.get("remove_logo"):
+        branding.remove_logo()
+        msg = "Uploaded logo removed: the CollabAce logo is back."
+    up = form.get("logo")
+    if up is not None and getattr(up, "filename", ""):
+        data = await up.read(branding.MAX_BYTES + 1)
+        try:
+            branding.save_logo(data)
+            msg = "Branding saved with the new logo."
+        except ValueError as e:
+            flash(request, str(e), "error")
+            return back("/admin/settings")
+    audit(db, user, "Updated branding", name=branding.brand()["name"])
+    flash(request, msg)
+    return back("/admin/settings")
+
+
 @router.post("/settings")
 def settings_save(request: Request, banner: str = Form(""), xray: str = Form(""), csrf: str = Form(""),
                   db: Session = Depends(get_db), user: User = Depends(require_admin)):
