@@ -54,7 +54,7 @@ Use it to understand *why* an attack worked. Your trainer may switch it off for 
 | Faye | Agents & MCP | Community FAQ bot that learns from customers |
 
 ## Bring your own MCP client
-The **Training lab** page gives you a personal token for the bank's MCP endpoint (`https://<range>/mcp/`). Connect Claude Desktop, MCP Inspector or your own script and call the bank's tools directly, with no model in between. Every call is logged.
+The **Agents & MCP** page (`/lab`) gives you a personal token for the bank's MCP endpoint (`https://<range>/mcp/`). Connect Claude Desktop, MCP Inspector or your own script and call the bank's tools directly, with no model in between. Every call is logged.
 
 ## Challenges
 | Challenge | Points | Hint |
