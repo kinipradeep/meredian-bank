@@ -304,6 +304,10 @@ elif echo "$ADMIN_OUT" | grep -q 'kept it'; then ADMIN_LINE="unchanged (change i
 elif [ -n "$ADMIN_PW" ]; then ADMIN_LINE="the password ${CONFIG:+in ADMIN_PASSWORD}${CONFIG:-you passed with --admin-password}"
 else ADMIN_LINE="unchanged (re-run with --admin-password to reset)"; fi
 
+case "$CFG_AGENT_MODEL" in   # Groq retired these on 2026-08-16
+  groq-llama-8b) CFG_AGENT_MODEL=groq-gpt-oss-20b; echo "AGENT_MODEL groq-llama-8b was retired by Groq: using groq-gpt-oss-20b." ;;
+  groq-llama-70b) CFG_AGENT_MODEL=groq-gpt-oss-120b; echo "AGENT_MODEL groq-llama-70b was retired by Groq: using groq-gpt-oss-120b." ;;
+esac
 if [ -n "$CFG_AGENT_MODEL" ]; then
   step "Agents -> $CFG_AGENT_MODEL"
   ENDPOINT=gateway; [[ "$CFG_AGENT_MODEL" == mock* ]] && ENDPOINT=mock

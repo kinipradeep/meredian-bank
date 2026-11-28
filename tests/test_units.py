@@ -276,10 +276,10 @@ def test_privacy_notice_names_the_model_provider():
     from types import SimpleNamespace as P
     from app.legal import _vendor
     gw = P(kind="openai_compat", slug="gateway", base_url="")
-    assert _vendor("groq-llama-8b", gw) == "Groq"
+    assert _vendor("groq-gpt-oss-20b", gw) == "Groq"
     assert _vendor("claude-haiku", gw) == "Anthropic (Claude)"
     assert _vendor("gemini-flash-lite", gw) == "Google (Gemini API)"
     assert _vendor("mock-gullible-1", P(kind="mock", slug="mock", base_url="")) is None
     assert _vendor("llama3.2:3b", P(kind="openai_compat", slug="ollama-direct", base_url="http://127.0.0.1:11434/v1")) is None
-    assert _vendor("llama-3.1-8b-instant", P(kind="openai_compat", slug="groq", base_url="https://api.groq.com/openai/v1")) == "Groq"
+    assert _vendor("openai/gpt-oss-20b", P(kind="openai_compat", slug="groq", base_url="https://api.groq.com/openai/v1")) == "Groq"
     assert "my-custom" in _vendor("my-custom", gw)

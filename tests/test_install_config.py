@@ -23,14 +23,14 @@ def run(tmp_path, cfg: str, *args):
 def test_values_are_literal(tmp_path):
     cfg = ("# c\nDOMAIN=Airange.CollabAce.com\nADMIN_EMAIL=Kini@Example.org\n"
            "ADMIN_PASSWORD=Harry$Potter!&1234 # comment\nGOOGLE_CLIENT_SECRET='GOCSPX-x#y z'\n"
-           "GROQ_API_KEY=gsk_a&b|c\nAGENT_MODEL=groq-llama-8b\nLLM_GUARD=no   # auto | yes | no\n"
+           "GROQ_API_KEY=gsk_a&b|c\nAGENT_MODEL=groq-gpt-oss-20b\nLLM_GUARD=no   # auto | yes | no\n"
            "GEMINI_API_KEY=AIza123\r\n")
     code, v, out = run(tmp_path, cfg, "--config", "range.env")
     assert code == 0, out
     assert v["DOMAIN"] == "airange.collabace.com" and v["EMAIL"] == "kini@example.org"
     assert v["ADMIN_PW"] == "Harry$Potter!&1234" and v["GOOGLE_SECRET"] == "GOCSPX-x#y z"
     assert v["CFG_GROQ_API_KEY"] == "gsk_a&b|c" and v["CFG_GEMINI_API_KEY"] == "AIza123"
-    assert v["GUARD_MODE"] == "no" and v["CFG_AGENT_MODEL"] == "groq-llama-8b"
+    assert v["GUARD_MODE"] == "no" and v["CFG_AGENT_MODEL"] == "groq-gpt-oss-20b"
 
 
 def test_rejects_placeholder_email_and_bad_guard(tmp_path):

@@ -21,18 +21,15 @@ model_list:
       model: gemini/gemini-3.1-flash-lite
       api_key: os.environ/GEMINI_API_KEY
 
-  # ---- Groq (GROQ_API_KEY)
-  - model_name: groq-llama-8b
-    litellm_params:
-      model: groq/llama-3.1-8b-instant
-      api_key: os.environ/GROQ_API_KEY
-  - model_name: groq-llama-70b
-    litellm_params:
-      model: groq/llama-3.3-70b-versatile
-      api_key: os.environ/GROQ_API_KEY
+  # ---- Groq (GROQ_API_KEY). Groq retired its Llama 3.x models on 16 Aug 2026; these are its replacements.
+  # Check console.groq.com/docs/deprecations before a class: retired models fail with "model_not_found".
   - model_name: groq-gpt-oss-20b
     litellm_params:
       model: groq/openai/gpt-oss-20b
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: groq-gpt-oss-120b
+    litellm_params:
+      model: groq/openai/gpt-oss-120b
       api_key: os.environ/GROQ_API_KEY
 
 general_settings:

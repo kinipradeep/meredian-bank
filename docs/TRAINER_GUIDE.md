@@ -10,7 +10,7 @@ Co-trainers need their own admin login: add them under **Admin → Administrator
 
 
 1. **Models.** Under **Admin → LLM gateway**, add at least one real model and click **Test**.
-   - A cheap, gullible model makes the vulnerable agents fall over convincingly: `groq/llama-3.1-8b-instant`.
+   - A cheap, gullible model makes the vulnerable agents fall over convincingly: `groq/openai/gpt-oss-20b` (Groq retired Llama 3.1 8B in August 2026).
    - A stronger model shows that even good models follow injected instructions: `anthropic/claude-haiku-5-5`.
 
    Then use **Agents → Apply to all agents** with the *LiteLLM gateway* endpoint. To rehearse with no keys, leave the agents on the *offline demo model*: every exercise below also works on it.
@@ -18,7 +18,7 @@ Co-trainers need their own admin login: add them under **Admin → Administrator
    hardening clearly: vulnerable agents on a cheap model, hardened agents on a stronger one.
    ```bash
    cd /opt/airange
-   sudo -u airange .venv/bin/python -m app.cli set-agent-model --model groq-llama-8b \
+   sudo -u airange .venv/bin/python -m app.cli set-agent-model --model groq-gpt-oss-20b \
      --agents aria-v1,refund-v1,concierge-v1,ledger-v1,hira-v1,ops-v1,triage-v1,nova-v1,leo-v1,echo-v1,faye-v1
    sudo -u airange .venv/bin/python -m app.cli set-agent-model --model claude-haiku \
      --agents aria-v2,refund-v2,concierge-v2,ledger-v2,hira-v2,ops-v2,triage-v2,nova-v2,leo-v2,echo-v2,faye-v2
@@ -28,7 +28,7 @@ Co-trainers need their own admin login: add them under **Admin → Administrator
    `scripts/lab_matrix.py` sends each lab's attack to the vulnerable agent (it should fall) and the hardened one
    (it should hold), on the models you name, without changing the agents:
    ```bash
-   sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-llama-8b,claude-haiku --repeat 2
+   sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-gpt-oss-20b,claude-haiku --repeat 2
    ```
    A lab marked ✗ under *v1 falls* needs a reworded attack (or a more gullible model) before class. One marked ✗
    under *v2 holds* means the hardening isn't enough on that model: a good discussion point, or move it to a

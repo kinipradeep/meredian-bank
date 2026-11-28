@@ -7,8 +7,8 @@ each turn on the model you name, without changing the agents learners use.
 Run it on the VM, from the app folder, before a class:
 
   cd /opt/airange
-  sudo -u airange .venv/bin/python scripts/lab_matrix.py --models claude-haiku,groq-llama-8b,gemini-flash-lite
-  sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-llama-70b --labs leak-override,invoice-fraud
+  sudo -u airange .venv/bin/python scripts/lab_matrix.py --models claude-haiku,groq-gpt-oss-20b,gemini-flash-lite
+  sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-gpt-oss-120b --labs leak-override,invoice-fraud
   sudo -u airange .venv/bin/python scripts/lab_matrix.py --models mock:mock-gullible-1     # offline, free
 
 --models takes gateway model names (Admin > LLM gateway); "endpoint:model" picks another endpoint.

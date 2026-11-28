@@ -6,7 +6,7 @@
   ADMIN_PASSWORD='...' python -m app.cli create-admin --email you@example.com   # keeps it out of `ps`
   python -m app.cli remove-password --email you@example.com           # Google sign-in only from now on
   python -m app.cli set-agent-model --model claude-haiku              # every agent -> LiteLLM gateway model
-  python -m app.cli set-agent-model --model groq-llama-70b --agents aria-v1,refund-v1
+  python -m app.cli set-agent-model --model groq-gpt-oss-120b --agents aria-v1,refund-v1
   python -m app.cli set-agent-model --model mock-gullible-1 --endpoint mock   # back to the offline model
   python -m app.cli set-agent-model --list                            # show what each agent uses now
 """
@@ -37,7 +37,7 @@ def main(argv=None) -> int:
     r = sub.add_parser("remove-password", help="remove a local password (Google sign-in only)")
     r.add_argument("--email", required=True)
     m = sub.add_parser("set-agent-model", help="point agents at an endpoint + model (default: LiteLLM gateway)")
-    m.add_argument("--model", default="", help="gateway model name, e.g. claude-haiku, gemini-flash-lite, groq-llama-70b")
+    m.add_argument("--model", default="", help="gateway model name, e.g. claude-haiku, gemini-flash-lite, groq-gpt-oss-20b")
     m.add_argument("--endpoint", default="gateway", help="endpoint slug: gateway (default), mock, ollama-direct")
     m.add_argument("--agents", default="", help="comma-separated agent slugs; blank = all agents")
     m.add_argument("--list", action="store_true", help="only show the current endpoint/model per agent")

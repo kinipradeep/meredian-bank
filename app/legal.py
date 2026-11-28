@@ -80,19 +80,17 @@ def _vendor(model: str, provider: Provider | None) -> str | None:
     base = (provider.base_url or "").lower()
     if "127.0.0.1:11434" in base or "localhost:11434" in base or m.startswith("ollama/"):
         return None
+    # A direct endpoint's address decides who receives the data (model names like openai/gpt-oss-20b are served
+    # by Groq too); behind the gateway, the gateway model name's prefix does.
+    for host, name in (("api.groq.com", "Groq"), ("anthropic.com", "Anthropic (Claude)"), ("openai.com", "OpenAI"),
+                       ("googleapis.com", "Google (Gemini API)")):
+        if host in base:
+            return name
     for prefix, name in (("claude", "Anthropic (Claude)"), ("anthropic", "Anthropic (Claude)"),
                          ("gemini", "Google (Gemini API)"), ("groq", "Groq"), ("gpt", "OpenAI"), ("openai", "OpenAI"),
                          ("o1", "OpenAI"), ("o3", "OpenAI"), ("o4", "OpenAI")):
         if m.startswith(prefix):
             return name
-    if "api.groq.com" in base:
-        return "Groq"
-    if "anthropic.com" in base:
-        return "Anthropic (Claude)"
-    if "openai.com" in base:
-        return "OpenAI"
-    if "googleapis.com" in base:
-        return "Google (Gemini API)"
     if provider.slug == "gateway" or not base:
         return f"the provider behind the gateway model \"{model}\""
     return urlparse(base).hostname or base

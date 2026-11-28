@@ -25,6 +25,9 @@ MIGRATIONS = [  # columns added after the first release; create_all does not alt
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS policies_version VARCHAR(40) NOT NULL DEFAULT ''",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS policies_accepted_at TIMESTAMPTZ",
+    # Groq retired Llama 3.1 8B / 3.3 70B on 2026-08-16: move agents to the gateway's replacement models.
+    "UPDATE agents SET model = 'groq-gpt-oss-20b' WHERE model = 'groq-llama-8b'",
+    "UPDATE agents SET model = 'groq-gpt-oss-120b' WHERE model = 'groq-llama-70b'",
     "ALTER TABLE agents ADD COLUMN IF NOT EXISTS mcp_servers JSON",
     "ALTER TABLE challenges ALTER COLUMN domain TYPE VARCHAR(200)",
     "ALTER TABLE challenges ADD COLUMN IF NOT EXISTS category VARCHAR(60) NOT NULL DEFAULT ''",

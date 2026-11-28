@@ -65,7 +65,7 @@ The seeded agents use the **offline demo model**, so every attack works before y
 One file holds the installer and all of the range's code, so the VM never needs to reach GitHub. Your settings go in one file, `range.env`.
 
 1. **Get the two files.** Download `meridian-range-installer.sh` and `range.env.example` from the latest **Actions** run on `main` (*Artifacts → meridian-range-installer*), or build them yourself with `scripts/make-installer.sh` (they land in `dist/`).
-2. **Fill in the settings.** Copy `range.env.example` to `range.env` and set at least `ADMIN_EMAIL`. Optionally set `DOMAIN` (leave it blank to use `<VM-IP>.sslip.io`, which needs no DNS), `ADMIN_PASSWORD`, `GROQ_API_KEY` with `AGENT_MODEL=groq-llama-8b`, and the Google sign-in keys. Every setting is explained in the file.
+2. **Fill in the settings.** Copy `range.env.example` to `range.env` and set at least `ADMIN_EMAIL`. Optionally set `DOMAIN` (leave it blank to use `<VM-IP>.sslip.io`, which needs no DNS), `ADMIN_PASSWORD`, `GROQ_API_KEY` with `AGENT_MODEL=groq-gpt-oss-20b`, and the Google sign-in keys. Every setting is explained in the file.
 3. **Copy both files to the VM** (Ubuntu 24.04, as root):
    ```bash
    scp meridian-range-installer.sh range.env root@<VM-IP>:
@@ -130,7 +130,7 @@ Create a free project at [cloud.langfuse.com](https://cloud.langfuse.com) (or `u
 
 #### 6. Add real models
 
-**Option A: API keys in an env file (recommended).** The gateway already defines `claude-haiku`, `claude-sonnet`, `gemini-flash-lite`, `groq-llama-8b`, `groq-llama-70b` and `groq-gpt-oss-20b` in `deploy/litellm/config.yaml`. They only need keys:
+**Option A: API keys in an env file (recommended).** The gateway already defines `claude-haiku`, `claude-sonnet`, `gemini-flash-lite`, `groq-gpt-oss-20b`, `groq-gpt-oss-120b` and `groq-gpt-oss-20b` in `deploy/litellm/config.yaml`. They only need keys:
 
 ```bash
 sudo nano /etc/airange/providers.env      # ANTHROPIC_API_KEY=… GEMINI_API_KEY=… GROQ_API_KEY=…
@@ -142,14 +142,14 @@ sudo systemctl restart airange-litellm
 ```bash
 cd /opt/airange && sudo -u airange .venv/bin/python -m app.cli set-agent-model --list
 sudo -u airange .venv/bin/python -m app.cli set-agent-model --model claude-haiku                       # all agents
-sudo -u airange .venv/bin/python -m app.cli set-agent-model --model groq-llama-8b --agents aria-v1,refund-v1
+sudo -u airange .venv/bin/python -m app.cli set-agent-model --model groq-gpt-oss-20b --agents aria-v1,refund-v1
 ```
 
 (Or set each agent's endpoint to *LiteLLM gateway* and its model name under **Admin → Agents**.)
 
 **Option B: from the admin portal.** Go to **Admin → LLM gateway → Add a model**. For example:
 - name `claude-haiku`, model string `anthropic/claude-haiku-5-5`, plus your Anthropic key;
-- or `groq-llama-8b` = `groq/llama-3.1-8b-instant`, which is cheap and gullible.
+- or `groq-gpt-oss-20b` = `groq/openai/gpt-oss-20b`, which is cheap and has a free tier. (Groq retired its Llama 3.x models on 16 Aug 2026.)
 
 **Test** it, then **Generate key** with a budget and "use for agents" ticked, and switch agents to the *LiteLLM gateway* endpoint with that model name.
 
