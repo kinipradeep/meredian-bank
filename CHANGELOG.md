@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-28
+- **Startup no longer locks every table.** Migrations skip changes already applied and run each change in its own short transaction with a 10-second lock timeout. Before, all 21 `ALTER TABLE`s ran in one transaction on every start and could deadlock with live requests, or with the lab matrix, during an update.
 - **Labs tuned for capable real models** (from a `groq-gpt-oss-20b` lab-matrix run):
   - Detectors normalise typographic characters (narrow no-break spaces, non-breaking hyphens, zero-width joiners). read-hr and faq-poison had worked but went undetected.
   - Vault levels 2–6 use a leaky, real-world instruction (refuse direct asks, play word games) and call the password "the magic word". The filters remain each level's defence.

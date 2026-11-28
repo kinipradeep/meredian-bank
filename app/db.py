@@ -50,8 +50,30 @@ MIGRATIONS = [  # columns added after the first release; create_all does not alt
 ]
 
 
-def migrate():
+def _already_applied(conn, sql: str) -> bool:
+    """True if an ALTER TABLE in MIGRATIONS has nothing left to do, so it can be skipped without taking a lock."""
+    import re
     from sqlalchemy import text
-    with engine.begin() as conn:
-        for sql in MIGRATIONS:
+    m = re.match(r"ALTER TABLE (\w+) ADD COLUMN IF NOT EXISTS (\w+)", sql)
+    if m:
+        return conn.execute(text("SELECT 1 FROM information_schema.columns WHERE table_name = :t AND column_name = :c"),
+                            {"t": m.group(1), "c": m.group(2)}).first() is not None
+    m = re.match(r"ALTER TABLE (\w+) ALTER COLUMN (\w+) TYPE VARCHAR\((\d+)\)", sql)
+    if m:
+        row = conn.execute(text("SELECT character_maximum_length FROM information_schema.columns "
+                                "WHERE table_name = :t AND column_name = :c"), {"t": m.group(1), "c": m.group(2)}).first()
+        return row is not None and row[0] == int(m.group(3))
+    return False
+
+
+def migrate():
+    """Apply MIGRATIONS. Each runs in its own short transaction and is skipped when already applied: ALTER TABLE
+    takes an exclusive lock, and holding locks on every table for the whole startup deadlocked with live requests
+    (or the lab matrix) while the app restarted."""
+    from sqlalchemy import text
+    for sql in MIGRATIONS:
+        with engine.begin() as conn:
+            if sql.startswith("ALTER TABLE") and _already_applied(conn, sql):
+                continue
+            conn.execute(text("SET LOCAL lock_timeout = '10s'"))
             conn.execute(text(sql))
