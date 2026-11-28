@@ -50,6 +50,15 @@ def controls_for(agent) -> dict:
     return c
 
 
+def learner_text(db, user_id: int, current: str = "", limit: int = 500) -> str:
+    """Everything this learner has typed recently, across all agents and sessions (for the detectors)."""
+    from ..models import ChatSession
+    rows = (db.query(ChatMessage.content).join(ChatSession, ChatSession.id == ChatMessage.session_id)
+            .filter(ChatSession.user_id == user_id, ChatMessage.role == "user")
+            .order_by(ChatMessage.id.desc()).limit(limit).all())
+    return "\n".join([r[0] or "" for r in rows] + [current or ""])
+
+
 def history_for(db, session_id: int, limit: int = 16) -> list:
     rows = db.query(ChatMessage).filter_by(session_id=session_id).order_by(ChatMessage.id.desc()).limit(limit).all()
     return [HumanMessage(r.content) if r.role == "user" else AIMessage(r.content) for r in reversed(rows)]
@@ -107,6 +116,7 @@ async def mcp_tools(ctx: AgentContext, guard_cfg: dict) -> list:
                 continue
             names.add(t.name)
             ctx.mcp_loaded.append({**info, "description": desc[:600], "suspicious": bool(suspicious)})
+            ctx.seen.append(desc)
             out.append(t)
     return out
 
@@ -154,6 +164,7 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
         ctx.secrets = FLAG_RE.findall(system)
         system += (f"\n\nSigned-in customer: {cust.full_name if cust else ctx.user.name} "
                    f"(customer ID {ctx.user.customer_id}, role {ctx.user.role}).")
+        ctx.seen.append(system)
         if ctx.agent.collection and c.get("auto_retrieve"):
             allowed = ctx.access if c.get("permission_aware_retrieval") else None
             try:
@@ -215,6 +226,7 @@ def build_graph(ctx: AgentContext, llm, tools: list, trace: dict, guard_cfg: dic
             out = out if isinstance(out, str) else (
                 "".join(p.get("text", "") for p in out if isinstance(p, dict)) if isinstance(out, list) else str(out))
             out = render_flags(out, ctx.user)
+            ctx.seen.append(out)
             source = "native" if tc["name"] in TOOLS else "mcp"
             untrusted = source == "mcp" or tc["name"] in CONTENT_TOOLS
             if untrusted and c.get("llm_guard_context") and guard_cfg.get("enabled"):
@@ -300,6 +312,7 @@ def graph_mermaid() -> str:
 async def _arun(db, agent, user, session, user_text: str) -> dict:
     c = controls_for(agent)
     ctx = AgentContext(db=db, user=user, agent=agent, controls=c)
+    ctx.learner_text = learner_text(db, user.id, user_text)
     started = time.time()
     trace = {"agent": agent.name, "mode": agent.mode, "runtime": "LangGraph",
              "provider": agent.provider.name if agent.provider else "none", "model": agent.model,

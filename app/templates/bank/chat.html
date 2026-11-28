@@ -11,7 +11,7 @@
 </div>
 <div class="chat-layout" id="chat-app" data-agent="{{ agent.slug }}" data-mode="{{ agent.mode }}">
   <section class="chat">
-    <div class="chat-title"><span class="dot"></span>{{ agent.name }}<span class="tag {{ 'bad' if agent.mode == 'vulnerable' else 'good' }}">{{ agent.mode }}</span>
+    <div class="chat-title"><span class="dot"></span>{{ agent.name }}<span class="tag {{ mode_class(agent) }}">{{ mode_label(agent) }}</span>
       <button class="linkbtn" id="reset-btn" type="button">New conversation</button></div>
     <div class="messages" id="messages" aria-live="polite"></div>
     <form class="composer" id="composer">

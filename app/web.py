@@ -33,5 +33,22 @@ def _inr(v):
     return f"{sign}₹{whole}.{frac}"
 
 
+def mode_label(agent) -> str:
+    """Badge text for an agent. Vault Keeper levels are a ladder of deliberately breakable defences, so they
+    show their level rather than 'hardened'."""
+    slug = getattr(agent, "slug", "") or ""
+    if slug.startswith("vault-"):
+        return "level " + slug.split("-", 1)[1]
+    return getattr(agent, "mode", "") or ""
+
+
+def mode_class(agent) -> str:
+    if (getattr(agent, "slug", "") or "").startswith("vault-"):
+        return "warn"
+    return "bad" if getattr(agent, "mode", "") == "vulnerable" else "good"
+
+
+templates.env.globals["mode_label"] = mode_label
+templates.env.globals["mode_class"] = mode_class
 templates.env.filters["inr"] = _inr
 templates.env.filters["tojson_pretty"] = lambda v: json.dumps(v, indent=2, ensure_ascii=False, default=str)

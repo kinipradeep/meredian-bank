@@ -1,38 +1,18 @@
 {% extends "base_bank.html" %}
-{% block title %}Training lab · Meridian Bank{% if mcp_bank.enabled %}
-<section class="panel" id="mcp"><h2>Connect your own MCP client</h2>
-  <p>The bank exposes its tools over the Model Context Protocol. Point Claude Desktop, MCP Inspector or your own agent at:</p>
-  <pre class="code">URL:    {{ mcp_endpoint }}
-Header: Authorization: Bearer {{ new_token if new_token else '&lt;your token&gt;' }}</pre>
-  {% if new_token %}<p class="tag warn">Copy this token now: it won't be shown again.</p>{% endif %}
-  <form method="post" action="/lab/mcp-token" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
-    <button class="btn small">{{ 'Rotate my token' if user.mcp_token else 'Create my token' }}</button></form>
-  <p class="muted">Every call is logged. Try the same attacks you used in chat, without a model in between.</p></section>
-{% endif %}
-{% endblock %}
+{% block title %}Agents · Meridian Bank{% endblock %}
 {% block content %}
-<div class="lab-head"><div><h1>Training lab</h1><p class="muted">Attack the bank's AI systems. Each challenge maps to an exam domain. <a class="btn small gold" href="/labs">Open the guided labs →</a></p></div>
-  <div class="score"><b>{{ score }}</b><span>points</span></div></div>
-<div class="grid-2">
-  {% for c in challenges %}
-  <article class="challenge {{ 'done' if c.id in solved }}">
-    <div class="ch-top"><span class="pts">{{ c.points }} pts</span>{% if c.id in solved %}<span class="tag good">Solved</span>{% endif %}</div>
-    <h3>{{ c.title }}</h3><p>{{ c.description }}</p><p class="domain">{{ c.domain }}</p>
-    <details><summary>Hint</summary><p>{{ c.hint }}</p></details>
-  </article>
-  {% endfor %}
-</div>
-<section class="panel"><h2>Agents in the range</h2>
+<div class="lab-head"><div><h1>Agents in the range</h1><p class="muted">Every AI agent at Meridian Bank, vulnerable and hardened. The <a href="/labs">labs</a> tell you which one to attack and when. <a class="btn small gold" href="/labs">Go to the labs →</a></p></div></div>
+<section class="panel">
   <table class="txns"><tr><th>Agent</th><th>Mode</th><th>Where</th><th></th></tr>
   {% for a in agents %}<tr><td><b>{{ a.name }}</b><br><small class="muted">{{ a.description }}</small></td>
-    <td><span class="tag {{ 'bad' if a.mode == 'vulnerable' else 'good' }}">{{ a.mode }}</span></td><td>{{ a.surface }}</td>
+    <td><span class="tag {{ mode_class(a) }}">{{ mode_label(a) }}</span></td><td>{{ a.surface }}</td>
     <td><a class="btn ghost small" href="/lab/agent/{{ a.slug }}">Open</a></td></tr>{% endfor %}
   </table></section>
 {% if mcp_bank.enabled %}
 <section class="panel" id="mcp"><h2>Connect your own MCP client</h2>
   <p>The bank exposes its tools over the Model Context Protocol. Point Claude Desktop, MCP Inspector or your own agent at:</p>
   <pre class="code">URL:    {{ mcp_endpoint }}
-Header: Authorization: Bearer {{ new_token if new_token else '&lt;your token&gt;' }}</pre>
+Header: Authorization: Bearer {{ new_token if new_token else '<your token>' }}</pre>
   {% if new_token %}<p class="tag warn">Copy this token now: it won't be shown again.</p>{% endif %}
   <form method="post" action="/lab/mcp-token" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
     <button class="btn small">{{ 'Rotate my token' if user.mcp_token else 'Create my token' }}</button></form>

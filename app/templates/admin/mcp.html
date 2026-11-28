@@ -26,7 +26,7 @@
   <label>Headers (JSON, stored encrypted) <input name="headers" placeholder='{"Authorization": "Bearer …"}'></label>
   <div class="actions full"><button class="btn">Register</button></div></form></section></div>
 <section class="card"><h2>The bank's own MCP endpoint</h2>
-<p>Learners can connect any MCP client (Claude Desktop, MCP Inspector, their own agent) to <b class="mono">{{ endpoint }}</b> with the personal token from their Training lab page. Calls run with the controls of the profile agent below, and every call is audited and scored.</p>
+<p>Learners can connect any MCP client (Claude Desktop, MCP Inspector, their own agent) to <b class="mono">{{ endpoint }}</b> with the personal token from their Agents &amp; MCP page. Calls run with the controls of the profile agent below, and every call is audited and scored.</p>
 <form method="post" action="/admin/mcp-bank" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
   <label class="check"><input type="checkbox" name="enabled" {{ 'checked' if bank.enabled }}> Endpoint enabled</label>
   <label>Controls come from agent <select name="profile_agent">{% for a in agents %}<option value="{{ a.slug }}" {{ 'selected' if a.slug == bank.profile_agent }}>{{ a.slug }} ({{ a.mode }})</option>{% endfor %}</select></label>

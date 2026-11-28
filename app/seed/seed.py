@@ -321,7 +321,14 @@ def seed_all(db, ingest: bool = True):
         from ..rag.ingest import ingest_document
         store.ensure_collection(KB, embedder=s.default_embedder, description="Meridian Bank knowledge base")
         for path in sorted(DOCS_DIR.glob("*.md")):
-            if db.query(KnowledgeDocument).filter_by(collection=KB, filename=path.name).first():
+            existing = db.query(KnowledgeDocument).filter_by(collection=KB, filename=path.name).first()
+            if existing:
+                # One-off content fix: the override code used to be in the staff manual too, which let learners
+                # solve the system-prompt lab through retrieval instead. Refresh only that unedited seed text.
+                if path.name == "staff-operations-manual.md" and "MB-OVR-" in (existing.content or ""):
+                    existing.content = path.read_text()
+                    db.commit()
+                    ingest_document(db, existing)
                 continue
             text = path.read_text()
             title = text.splitlines()[0].lstrip("# ").strip()

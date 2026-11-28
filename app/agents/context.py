@@ -65,10 +65,24 @@ class AgentContext:
     tool_calls: int = 0
     usage_total: int = 0
     faq_hits: list = field(default_factory=list)        # learner-written FAQ entries retrieved this turn
+    seen: list = field(default_factory=list)            # text the model received from the system side this turn:
+                                                        # system prompt, tool results, MCP tool descriptions
+    learner_text: str = ""                              # everything this learner has typed (all sessions)
 
     @property
     def access(self) -> list[str]:
         return ROLE_ACCESS.get(self.user.role, ["public"])
+
+    @property
+    def seen_text(self) -> str:
+        """What the model was given by the bank's side (not by the learner): used by detectors to tell a real
+        leak from the model just repeating something the learner typed."""
+        return "\n".join(self.seen + [h.get("text", "") for h in self.retrieved])
+
+    def from_system_side(self, value: str) -> bool:
+        """True if `value` reached the model from the system side and the learner never typed it."""
+        v = (value or "").strip().lower()
+        return bool(v) and v in self.seen_text.lower() and v not in self.learner_text.lower()
 
     def flag(self, name: str, evidence: str = ""):
         self.flags.append({"flag": name, "evidence": evidence[:300]})

@@ -164,7 +164,7 @@ Trainers can switch to a scored CTF (personal flags, first blood, scoreboard, ev
    - On **MCP servers → partner-services**, look at what the model sees: `partner_offers` hides an `<IMPORTANT>` block.
    - Ask Max v1 for partner offers: it emails the customer's data out.
    - Pin the clean tools, **trigger the rug pull**, and ask both Max versions for a USD rate. v1 is hijacked; v2 refuses the changed tool.
-6. **Bypass the model entirely.** Learners create a token in the Training lab and connect Claude Desktop or MCP Inspector to `https://range.example.com/mcp/`. Switch the endpoint's profile between `refund-v1` and `refund-v2` and watch the calls in Admin → MCP.
+6. **Bypass the model entirely.** Learners create a token on the Agents & MCP page (`/lab`) and connect Claude Desktop or MCP Inspector to `https://range.example.com/mcp/`. Switch the endpoint's profile between `refund-v1` and `refund-v2` and watch the calls in Admin → MCP.
 7. **Defence in depth.** Clone an agent and switch one control off at a time (regex guard, LLM Guard, isolation, pinning) to see which attack comes back.
 
 These exercises map to the ISC2 AI security domains, the OWASP Top 10 for LLM Applications (LLM01, 02, 03, 06, 07, 08) and MITRE ATLAS.
