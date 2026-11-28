@@ -1,7 +1,7 @@
 """The Meridian Bank MCP endpoint, mounted in the main app at /mcp/.
 
 Any MCP client (Claude Desktop, MCP Inspector, an agent) can call the bank's tools with a learner's
-personal token (shown in the Training lab). Calls run with the controls of the "profile agent" chosen
+personal token (shown on the Agents & MCP page). Calls run with the controls of the "profile agent" chosen
 in Admin > MCP, so the same endpoint can be vulnerable or hardened - and every call is audited.
 """
 from types import SimpleNamespace
@@ -34,7 +34,7 @@ def _call(ctx: Context, name: str, args: dict) -> str:
             return "The Meridian Bank MCP endpoint is switched off."
         user = db.query(User).filter_by(mcp_token=auth).first() if auth else None
         if user is None or not user.is_active:     # a plain result (not an exception) so clients see why
-            return "Unauthorised: invalid or missing token. Create one on the Training lab page."
+            return "Unauthorised: invalid or missing token. Create one on the Agents & MCP page (/lab)."
         profile = db.query(Agent).filter_by(slug=cfg.get("profile_agent")).first()
         controls = dict(DEFAULT_CONTROLS)
         controls.update(profile.controls if profile else {})

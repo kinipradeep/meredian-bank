@@ -42,19 +42,19 @@ Use it to understand *why* an attack worked. Your trainer may switch it off for 
 |---|---|---|
 | Aria | Help & support | Answers from the bank's knowledge base, looks up your accounts, opens your documents, sends emails |
 | Refund Desk | Disputes | Lists transactions, issues refunds |
-| Max | Training lab | Concierge using a third-party MCP tool server (branches, FX rates, partner offers) |
-| Ledger | Training lab | Accounts-payable agent: reads invoices in the AP inbox and pays vendors |
-| Hira | Training lab | HR assistant: screens job applicants' resumes |
-| Ops copilot | Training lab | Staff helper that searches the bank's document drive |
-| Vault Keeper (levels 1–6) | Training lab | Guards a password. Each level adds a defence |
-| Aiden | Training lab | Front desk that hands money transfers to an internal Treasury agent |
-| Nova | Training lab | Writes complaint summaries for a staff dashboard that renders markdown |
-| Leo | Training lab | Loan advisor that issues offers |
-| Echo | Training lab | Statement analyst; very thorough |
-| Faye | Training lab | Community FAQ bot that learns from customers |
+| Max | Agents & MCP | Concierge using a third-party MCP tool server (branches, FX rates, partner offers) |
+| Ledger | Agents & MCP | Accounts-payable agent: reads invoices in the AP inbox and pays vendors |
+| Hira | Agents & MCP | HR assistant: screens job applicants' resumes |
+| Ops copilot | Agents & MCP | Staff helper that searches the bank's document drive |
+| Vault Keeper (levels 1–6) | Agents & MCP | Guards a password. Each level adds a defence |
+| Aiden | Agents & MCP | Front desk that hands money transfers to an internal Treasury agent |
+| Nova | Agents & MCP | Writes complaint summaries for a staff dashboard that renders markdown |
+| Leo | Agents & MCP | Loan advisor that issues offers |
+| Echo | Agents & MCP | Statement analyst; very thorough |
+| Faye | Agents & MCP | Community FAQ bot that learns from customers |
 
 ## Bring your own MCP client
-The **Training lab** page gives you a personal token for the bank's MCP endpoint (`https://<range>/mcp/`). Connect Claude Desktop, MCP Inspector or your own script and call the bank's tools directly, with no model in between. Every call is logged.
+The **Agents & MCP** page (`/lab`) gives you a personal token for the bank's MCP endpoint (`https://<range>/mcp/`). Connect Claude Desktop, MCP Inspector or your own script and call the bank's tools directly, with no model in between. Every call is logged.
 
 ## Challenges
 | Challenge | Points | Hint |

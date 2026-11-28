@@ -73,12 +73,10 @@ def disputes(request: Request, agent: str | None = None, db: Session = Depends(g
 
 @router.get("/lab")
 def lab(request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
-    challenges = db.query(Challenge).filter_by(enabled=True).order_by(Challenge.id).all()
-    solved = {s.challenge_id for s in db.query(ChallengeSolve).filter_by(user_id=user.id)}
+    """Agents & MCP: every agent in the range, plus the learner's own MCP connection. Challenges live under /labs."""
     from ..integrations.settings import get_integration
     return templates.TemplateResponse(request, "bank/lab.html", _ctx(
-        request, db, user, challenges=challenges, solved=solved, agents=_agents(db),
-        score=__import__("app.ctf", fromlist=["player_score"]).player_score(db, user), mcp_bank=get_integration(db, "mcp_bank"),
+        request, db, user, agents=_agents(db), mcp_bank=get_integration(db, "mcp_bank"),
         mcp_endpoint=str(request.base_url).rstrip("/") + "/mcp/", new_token=request.session.pop("new_mcp_token", None)))
 
 
