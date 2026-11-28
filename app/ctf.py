@@ -177,7 +177,7 @@ def scoreboard(db, include_admins: bool = False, respect_freeze: bool = True) ->
     rows = {}
     for s in solves:
         u = users.get(s.user_id)
-        if not u or (u.role == "admin" and not include_admins):
+        if not u or u.is_test_account or (u.role == "admin" and not include_admins):
             continue
         r = rows.setdefault(u.id, {"user": u, "points": 0, "solves": 0, "first_bloods": 0, "last": s.solved_at})
         r["points"] += s.points

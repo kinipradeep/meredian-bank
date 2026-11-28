@@ -32,6 +32,11 @@ class User(Base):
     def is_admin(self) -> bool:
         return self.role == "admin"
 
+    @property
+    def is_test_account(self) -> bool:
+        """The lab-matrix script's account (scripts/lab_matrix.py): hidden from progress and the scoreboard."""
+        return (self.email or "").endswith("@lab-matrix.invalid")
+
 
 class Setting(Base):
     """Key/value platform settings editable from the admin panel."""

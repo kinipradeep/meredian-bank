@@ -194,6 +194,7 @@ python -m app.mcp_servers.partner &
 DATABASE_URL=postgresql+psycopg://user:pass@127.0.0.1:5432/airange DEV_LOGIN_ENABLED=true uvicorn app.main:app --reload
 ```
 `scripts/smoke_test.py` drives a running dev instance end to end: every admin page and every attack, against vulnerable and hardened agents.
+`scripts/lab_matrix.py` runs on the VM before a class: each lab's attack against the vulnerable and hardened agent, on the real models you name (see the trainer guide).
 
 ## Operations
 - **Backups:** `scripts/backup.sh` runs nightly. It dumps both databases (range, LiteLLM) and archives Chroma into `/opt/airange/backups`, keeping 14 days. Copy them off the VM, or enable Linode Backups.
@@ -222,7 +223,7 @@ app/
   routers/       bank · chat · admin · admin_stack (gateway, tracing, guardrails, MCP, runtime)
   seed/  templates/  static/
 deploy/          systemd/*.service · caddy/Caddyfile · litellm/config.yaml · llm-guard/scanners.yml
-scripts/         install.sh · gen-env.sh · deploy.sh · backup.sh · smoke_test.py
+scripts/         install.sh · gen-env.sh · deploy.sh · backup.sh · smoke_test.py · lab_matrix.py
 .github/workflows/ci-cd.yml
 ```
 **Add a native tool:** write a function with `@tool(...)` in `app/agents/tools.py`; it appears in the agent form automatically. **Add an external tool:** register its MCP server in the portal and tick it on an agent.

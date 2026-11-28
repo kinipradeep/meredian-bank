@@ -309,21 +309,23 @@ def graph_mermaid() -> str:
 
 # ---------------------------------------------------------------- entry point
 
-async def _arun(db, agent, user, session, user_text: str) -> dict:
+async def _arun(db, agent, user, session, user_text: str, override: tuple | None = None) -> dict:
+    """override=(provider, model) runs this turn on another endpoint without changing the agent (lab matrix)."""
+    provider, model = override if override else (agent.provider, agent.model)
     c = controls_for(agent)
     ctx = AgentContext(db=db, user=user, agent=agent, controls=c)
     ctx.learner_text = learner_text(db, user.id, user_text)
     started = time.time()
     trace = {"agent": agent.name, "mode": agent.mode, "runtime": "LangGraph",
-             "provider": agent.provider.name if agent.provider else "none", "model": agent.model,
+             "provider": provider.name if provider else "none", "model": model,
              "controls": c, "steps": [], "retrieved": [], "events": [], "flags": [], "solved": [],
              "usage": {"input": 0, "output": 0}, "llm_guard": {}, "mcp_tools": []}
     guard_cfg = get_integration(db, "llmguard")
     lf_cfg = get_integration(db, "langfuse")
     reply = ""
     try:
-        p = agent.provider
-        llm = build_chat_model(p, agent.model or (p.default_model if p else ""), float(c.get("temperature", 0.3)),
+        p = provider
+        llm = build_chat_model(p, model or (p.default_model if p else ""), float(c.get("temperature", 0.3)),
                                int(c.get("max_tokens", 800)), gateway=get_integration(db, "gateway"))
         tools = native_tools(ctx) + await mcp_tools(ctx, guard_cfg)
         graph = build_graph(ctx, llm, tools, trace, guard_cfg)
@@ -349,8 +351,8 @@ async def _arun(db, agent, user, session, user_text: str) -> dict:
     return _finish(db, ctx, session, user_text, reply, trace, started)
 
 
-def run_turn(db, agent, user, session, user_text: str) -> dict:
-    return asyncio.run(_arun(db, agent, user, session, user_text))
+def run_turn(db, agent, user, session, user_text: str, override: tuple | None = None) -> dict:
+    return asyncio.run(_arun(db, agent, user, session, user_text, override))
 
 
 def _finish(db, ctx, session, user_text, reply, trace, started):
