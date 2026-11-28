@@ -37,7 +37,8 @@ def progress_data(db: Session, module: str = ""):
     chs = [c for c in db.query(Challenge).filter(Challenge.enabled.is_(True))
            .order_by(Challenge.module_order, Challenge.sort_order, Challenge.id) if not module or c.module == module]
     ids = [c.id for c in chs]
-    learners = db.query(User).filter(User.role != "admin").order_by(User.name, User.email).all()
+    learners = [u for u in db.query(User).filter(User.role != "admin").order_by(User.name, User.email)
+                if not u.is_test_account]
 
     solves = {(s.user_id, s.challenge_id): s for s in db.query(ChallengeSolve).filter(ChallengeSolve.challenge_id.in_(ids))}
     steps, answers = defaultdict(int), {}

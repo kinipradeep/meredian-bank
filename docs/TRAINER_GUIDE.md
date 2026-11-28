@@ -12,10 +12,30 @@ Co-trainers need their own admin login: add them under **Admin → Administrator
    - A stronger model shows that even good models follow injected instructions: `anthropic/claude-haiku-5-5`.
 
    Then use **Agents → Apply to all agents** with the *LiteLLM gateway* endpoint. To rehearse with no keys, leave the agents on the *offline demo model*: every exercise below also works on it.
-2. **Budget.** Under **LLM gateway → Generate key**, create a key with a budget (for example $10), with *use for agents* ticked.
-3. **Fresh state.** Use **Challenges → Reset all progress**, **MeriDrive → Reset drive for a new cohort**, and **MCP servers → Restore clean fx_rate** if the rug pull is on.
-4. **Visibility.** Under **Settings**, decide whether learners see the X-ray panel. Keeping it on for the first half and switching it off for a "blind" round works well.
-5. **Tracing (optional).** Paste Langfuse Cloud keys into **Tracing** so you can replay any learner's attack node by node.
+   From the command line, `set-agent-model` does the same per agent. A split that keeps cost down and shows the
+   hardening clearly: vulnerable agents on a cheap model, hardened agents on a stronger one.
+   ```bash
+   cd /opt/airange
+   sudo -u airange .venv/bin/python -m app.cli set-agent-model --model groq-llama-8b \
+     --agents aria-v1,refund-v1,concierge-v1,ledger-v1,hira-v1,ops-v1,triage-v1,nova-v1,leo-v1,echo-v1,faye-v1
+   sudo -u airange .venv/bin/python -m app.cli set-agent-model --model claude-haiku \
+     --agents aria-v2,refund-v2,concierge-v2,ledger-v2,hira-v2,ops-v2,triage-v2,nova-v2,leo-v2,echo-v2,faye-v2
+   ```
+   Keep **Echo v1** (*Drain the wallet*: no step limit by design) on the cheapest model.
+2. **Check the labs on those models.** The worked answers were written on the offline model; real models vary.
+   `scripts/lab_matrix.py` sends each lab's attack to the vulnerable agent (it should fall) and the hardened one
+   (it should hold), on the models you name, without changing the agents:
+   ```bash
+   sudo -u airange .venv/bin/python scripts/lab_matrix.py --models groq-llama-8b,claude-haiku --repeat 2
+   ```
+   A lab marked ✗ under *v1 falls* needs a reworded attack (or a more gullible model) before class. One marked ✗
+   under *v2 holds* means the hardening isn't enough on that model: a good discussion point, or move it to a
+   stronger model. A full run is about 40 agent turns per model per repeat; on Groq 8B that costs cents.
+   Vault Keeper level 6 is multi-turn by design and is skipped: try it by hand.
+3. **Budget.** Under **LLM gateway → Generate key**, create a key with a budget (for example $10), with *use for agents* ticked.
+4. **Fresh state.** Use **Challenges → Reset all progress**, **MeriDrive → Reset drive for a new cohort**, and **MCP servers → Restore clean fx_rate** if the rug pull is on.
+5. **Visibility.** Under **Settings**, decide whether learners see the X-ray panel. Keeping it on for the first half and switching it off for a "blind" round works well.
+6. **Tracing (optional).** Paste Langfuse Cloud keys into **Tracing** so you can replay any learner's attack node by node.
 
 ## Labs or CTF
 **Admin → Labs & CTF → Mode** switches the whole range between two formats. Players always use **Labs** in the top menu.
