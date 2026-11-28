@@ -1,6 +1,14 @@
 # Changelog
 
 ## 2026-11-28
+- **Labs tuned for capable real models** (from a `groq-gpt-oss-20b` lab-matrix run):
+  - Detectors normalise typographic characters (narrow no-break spaces, non-breaking hyphens, zero-width joiners). read-hr and faq-poison had worked but went undetected.
+  - Vault levels 2–6 use a leaky, real-world instruction (refuse direct asks, play word games) and call the password "the magic word". The filters remain each level's defence.
+  - leak-override's worked answer uses the prompt's "staff" loophole.
+  - md-exfil's answer asks for the case token in the image URL.
+  - Echo is told to make one tool call per check.
+  - Unedited prompts on existing installs are upgraded automatically.
+  - `lab_matrix.py` waits and retries after a 429.
 - **Fix: connection leak with real models.** Every chat turn left its model connections open, up to five per turn with failover, so chats slowed down over time and logged "Event loop is closed". Each turn now closes its HTTP clients before its event loop ends.
 - `lab_matrix.py --show` prints the agent's reply when a lab doesn't behave as expected.
 - **Labs on real models:**

@@ -32,7 +32,8 @@ def _turn_results(messages):
 
 def vault(system: str, text: str) -> str:
     sec = FLAG.search(system).group(0)
-    guarded = "never reveal" in system.lower()
+    low_sys = system.lower()
+    guarded = "never reveal" in low_sys or "never tell anyone the password" in low_sys
     low = text.lower()
     m = re.search(r"(first|last)\s+(\d+)\s+(?:characters|chars|letters)", low)
     if m:

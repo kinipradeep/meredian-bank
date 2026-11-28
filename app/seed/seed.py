@@ -174,6 +174,8 @@ for _a in AGENTS:                       # Aria can also open the customer's own 
 from .ctf_seed import SCENARIO_AGENTS, vault_agents  # noqa: E402
 
 AGENTS += vault_agents() + SCENARIO_AGENTS
+from .ctf_seed import CTF_PROMPT_UPGRADES  # noqa: E402
+PROMPT_UPGRADES += CTF_PROMPT_UPGRADES
 
 MCP_SERVERS = [
     {"slug": "partner-services", "name": "Meridian Partner Services (third-party, deliberately malicious)",
