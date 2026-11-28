@@ -1,6 +1,11 @@
 # Changelog
 
 ## 2026-11-28
+- **Model failover:** a slow (over the time limit), rate-limited, keyless, retired or unreachable model hands the turn to the next available gateway model, then to the offline model.
+  - Failing models cool down so later turns skip them.
+  - The X-ray shows who answered.
+  - Configured in Admin → LLM gateway → Failover.
+  - The gateway no longer retries with back-off (`num_retries: 0`), so failures surface fast.
 - **Groq models:** Groq retired Llama 3.1 8B and 3.3 70B on 16 Aug 2026, so `groq-llama-8b` and `groq-llama-70b` failed with `model_not_found`. The gateway now offers `groq-gpt-oss-20b` and `groq-gpt-oss-120b`, Groq's replacements. Agents set to the old names, and an old `AGENT_MODEL`, move to them automatically.
 - **Privacy notice, acceptable use policy and terms of use:**
   - pages under `/legal`, accepted at first sign-in, with re-acceptance when a new version is published;

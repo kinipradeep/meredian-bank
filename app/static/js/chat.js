@@ -49,6 +49,8 @@
     const nums = ["refund_cap", "require_approval_over"].filter((k) => c[k] !== null && c[k] !== undefined).map((k) => `${k}=${c[k]}`);
     xbody.appendChild(section("Controls", on.concat(nums).map((k) => `<span class="tag">${esc(k)}</span>`).join(" ") || "<span class='muted'>None: every guard is off.</span>", true));
 
+    if (t.fallbacks && t.fallbacks.length) xbody.appendChild(section(`Model failover: answered by ${esc(t.answered_by || t.model)}`,
+      t.fallbacks.map((f) => `<div class="xev ${f.skipped ? "" : "guard"}"><b>${esc(f.model)}</b> ${esc(f.reason)}</div>`).join(""), true));
     const ev = (t.events || []);
     if (ev.length) xbody.appendChild(section(`Guard and error events (${ev.length})`, ev.map((e) => `<div class="xev ${e.kind}"><b>${esc(e.guard || e.kind)}</b> ${esc(e.detail || "")}</div>`).join(""), true));
 

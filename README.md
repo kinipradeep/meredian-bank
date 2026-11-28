@@ -161,6 +161,17 @@ sudo -u airange .venv/bin/python -m app.cli set-agent-model --model groq-gpt-oss
 
 **Day-to-day:** `journalctl -u airange-app -f` (or another service name) for logs; `systemctl restart airange-<name>` to restart; `/opt/airange/scripts/backup.sh` to back up by hand.
 
+## Model failover
+If an agent's model is slow, rate-limited, missing its key, retired or down, the turn moves to the next model in the failover list. If every model fails, the built-in offline model answers, so learners always get a reply. A failing model is skipped for a cool-down (2 minutes, or 15 for a missing key or retired model). The X-ray panel shows which model answered and why the others were skipped.
+
+Configure it in **Admin → LLM gateway → Failover**:
+- the time limit per model (default 20 s);
+- the order of models to try (default `groq-gpt-oss-20b, gemini-flash-lite, groq-gpt-oss-120b, claude-haiku`);
+- the offline fallback;
+- a button to try every model again.
+
+The lab matrix (`scripts/lab_matrix.py`) bypasses failover, because it measures specific models.
+
 ## Privacy, acceptable use and terms
 The range has a **privacy notice**, an **acceptable use policy** (what learners may and may not attack) and **terms of use** at `/legal/…`, linked from the sign-in page and every footer. Everyone accepts them once before using the range.
 

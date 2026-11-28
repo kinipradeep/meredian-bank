@@ -37,6 +37,12 @@ general_settings:
   database_url: os.environ/DATABASE_URL
   store_model_in_db: true
 
+router_settings:
+  # Fail fast on rate limits and outages: the range itself moves the turn to the next model
+  # (Admin > LLM gateway > Failover), which is quicker than the gateway retrying with back-off.
+  num_retries: 0
+  timeout: 60
+
 litellm_settings:
   drop_params: true          # ignore params a provider does not support instead of failing
   request_timeout: 90

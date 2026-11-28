@@ -13,6 +13,23 @@
 {% if m.db_model and m.id %}<form method="post" action="/admin/gateway/models/{{ m.id }}/delete" class="inline"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small danger">Remove</button></form>{% endif %}</td></tr>
 {% else %}<tr><td colspan="5" class="muted">{{ 'No models yet. Add one below.' if up else 'Gateway offline: on the VM run sudo systemctl start airange-litellm (logs: journalctl -u airange-litellm).' }}</td></tr>{% endfor %}</table></section>
 
+<section class="card" id="failover"><h2>Failover {% if fo.enabled %}<span class="tag good">on</span>{% else %}<span class="tag">off</span>{% endif %}</h2>
+<p class="muted">If an agent's model is slower than the time limit, rate-limited, missing its key, retired or down, the turn moves to the next model below{{ ', then to the offline model' if fo.local_fallback }}. A failing model is skipped for the cool-down period (15 minutes for a missing key or retired model), so later turns go straight to one that works. The X-ray panel shows which model answered.</p>
+<form method="post" action="/admin/gateway/failover" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">
+  <label class="check full"><input type="checkbox" name="enabled" {{ 'checked' if fo.enabled }}> Switch to another model when the agent's model is slow or failing</label>
+  <label class="full">Models to try next, in order (gateway names, comma-separated) <input name="models" value="{{ fo.models|join(', ') }}" placeholder="groq-gpt-oss-20b, gemini-flash-lite, groq-gpt-oss-120b, claude-haiku"></label>
+  <label>Time limit per model (seconds) <input type="number" name="timeout_s" min="3" max="120" value="{{ fo.timeout_s }}"></label>
+  <label>Cool-down after a failure (seconds) <input type="number" name="cooldown_s" min="10" max="3600" value="{{ fo.cooldown_s }}"></label>
+  <label class="check full"><input type="checkbox" name="local_fallback" {{ 'checked' if fo.local_fallback }}> If every model fails, answer with the offline model (always replies; learners see it in the X-ray)</label>
+  <div class="actions full"><button class="btn">Save failover</button></div>
+</form>
+<h3>Models being skipped right now</h3>
+{% if fo_cool %}<table><tr><th>Model</th><th>Why</th><th>Tried again in</th></tr>
+{% for c in fo_cool %}<tr><td class="mono">{{ c.model }}</td><td>{{ c.reason }}</td><td>{{ c.seconds_left }} s</td></tr>{% endfor %}</table>
+<form method="post" action="/admin/gateway/failover/clear"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}"><button class="btn small ghost">Try all models again now</button></form>
+{% else %}<p class="muted">None: every model is being tried.</p>{% endif %}
+</section>
+
 <div class="two">
 <section class="card"><h2>Add a model</h2>
 <form method="post" action="/admin/gateway/models" class="grid-form"><input type="hidden" name="csrf" value="{{ csrf_token(request) }}">

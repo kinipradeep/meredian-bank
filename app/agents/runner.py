@@ -325,8 +325,12 @@ async def _arun(db, agent, user, session, user_text: str, override: tuple | None
     reply = ""
     try:
         p = provider
-        llm = build_chat_model(p, model or (p.default_model if p else ""), float(c.get("temperature", 0.3)),
-                               int(c.get("max_tokens", 800)), gateway=get_integration(db, "gateway"))
+        args = (p, model or (p.default_model if p else ""), float(c.get("temperature", 0.3)), int(c.get("max_tokens", 800)))
+        if override:   # the lab matrix measures one specific model: no failover
+            llm = build_chat_model(*args, gateway=get_integration(db, "gateway"))
+        else:          # slow or failing model -> next available model -> offline model (Admin > LLM gateway > Failover)
+            from ..providers.failover import build_failover
+            llm = build_failover(db, *args, gateway=get_integration(db, "gateway"), trace=trace, ctx=ctx)
         tools = native_tools(ctx) + await mcp_tools(ctx, guard_cfg)
         graph = build_graph(ctx, llm, tools, trace, guard_cfg)
         config = {"recursion_limit": 4 * int(c.get("max_steps", 4)) + 10, "run_name": agent.slug,

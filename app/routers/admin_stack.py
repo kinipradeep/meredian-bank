@@ -45,8 +45,39 @@ def gateway(request: Request, db: Session = Depends(get_db), user: User = Depend
     err = "; ".join(errs)
     endpoint = db.query(Provider).filter_by(slug="gateway").first()
     using = db.query(Agent).filter_by(provider_id=endpoint.id).count() if endpoint else 0
+    from ..providers import failover
     return render(request, "gateway.html", user, cfg=cfg, up=up, models=models, keys=keys, logs=logs, err=err,
-                  presets=PRESETS, master=mask(cfg.get("master_key", "")), endpoint=endpoint, using=using)
+                  presets=PRESETS, master=mask(cfg.get("master_key", "")), endpoint=endpoint, using=using,
+                  fo=failover.config(db), fo_cool=failover.cooldowns())
+
+
+@router.post("/gateway/failover")
+def gateway_failover(request: Request, csrf: str = Form(""), enabled: str = Form(""), timeout_s: str = Form("20"),
+                     models: str = Form(""), local_fallback: str = Form(""), cooldown_s: str = Form("120"),
+                     db: Session = Depends(get_db), user: User = Depends(require_admin)):
+    from ..providers import failover
+    verify_csrf(request, csrf)
+    try:
+        t, cd = max(3, min(120, int(timeout_s))), max(10, min(3600, int(cooldown_s)))
+    except ValueError:
+        flash(request, "Time limit and cool-down must be whole numbers of seconds.", "error")
+        return back("/admin/gateway#failover")
+    chain = [m.strip() for m in models.replace("\n", ",").split(",") if m.strip()][:12]
+    cfg = failover.save_config(db, {"enabled": bool(enabled), "timeout_s": t, "models": chain,
+                                    "local_fallback": bool(local_fallback), "cooldown_s": cd})
+    failover.clear_cooldowns()
+    audit(db, user, "Updated model failover", **{k: cfg[k] for k in ("enabled", "timeout_s", "models", "local_fallback")})
+    flash(request, "Failover saved." if cfg["enabled"] else "Failover is off: agents use only their own model.")
+    return back("/admin/gateway#failover")
+
+
+@router.post("/gateway/failover/clear")
+def gateway_failover_clear(request: Request, csrf: str = Form(""), user: User = Depends(require_admin)):
+    from ..providers import failover
+    verify_csrf(request, csrf)
+    failover.clear_cooldowns()
+    flash(request, "Cool-downs cleared: the next turn tries every model again.")
+    return back("/admin/gateway#failover")
 
 
 @router.post("/gateway/settings")
